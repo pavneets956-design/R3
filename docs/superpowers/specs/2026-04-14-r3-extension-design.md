@@ -230,6 +230,22 @@ This is the only real network call in Phase 1.
 
 **Cache strategy:** Stale-while-revalidate. If cached data exists but is older than 24h, the panel renders the stale rules immediately and triggers a background re-fetch. The panel updates when the fresh data arrives.
 
+**Rate limit protection:** A minimum interval of 10 seconds is enforced between fetch attempts for the same subreddit. If the user navigates between subreddits faster than this, the second fetch is queued and fires after the interval elapses. This prevents Reddit API throttling and avoids unnecessary retries triggered by fast navigation.
+
+**In-flight deduplication:** If a fetch for a given subreddit is already in progress, any additional requests for that same subreddit attach to the existing promise rather than issuing a new network call. Implementation:
+
+```ts
+const inFlight: Record<string, Promise<RulesResult>> = {};
+
+function fetchRules(subreddit: string): Promise<RulesResult> {
+  if (inFlight[subreddit]) return inFlight[subreddit];
+  inFlight[subreddit] = doFetch(subreddit).finally(() => {
+    delete inFlight[subreddit];
+  });
+  return inFlight[subreddit];
+}
+```
+
 **Retry strategy:** On fetch failure, one automatic silent retry fires after 1.5 seconds. If the retry also fails, the error UI is shown with a manual retry button.
 
 **Failure handling:**
@@ -269,7 +285,7 @@ interface LogEvent {
 }
 ```
 
-The log is a rolling array capped at 500 entries. When the cap is reached, the oldest entry is dropped. Logs are viewable from the options page in Phase 2.
+The log is a rolling array capped at 500 entries. Pruning strategy: FIFO — the oldest entry is removed first. Pruning happens on every write: after appending the new event, if the array length exceeds 500, shift the first element. This keeps the implementation deterministic and avoids a separate scheduled cleanup pass.
 
 ---
 
@@ -383,7 +399,147 @@ project-root/
 
 ---
 
-## 15. Phase 2 Hooks
+## 15. Render Performance Guard
+
+React re-renders the panel on every context update from the bridge. Since Reddit's DOM is noisy and the MutationObserver fires frequently, this can cause unnecessary renders.
+
+**Rule:** The `usePageContext` hook must only trigger a re-render when `subreddit` or `pageType` changes. All other `PageContext` fields (`url`, `detectedAt`, `postComposerOpen`, `postId`) must not cause a re-render on their own unless a component explicitly opts in.
+
+**Implementation:** Use `useMemo` or a shallow equality check inside `usePageContext` to compare the incoming context against the current one before updating state:
+
+```ts
+const shouldUpdate =
+  prev.subreddit !== next.subreddit || prev.pageType !== next.pageType;
+```
+
+This keeps the UI smooth on Reddit's noisy DOM without requiring a separate state management library.
+
+---
+
+## 16. Phase 1.5 — SEO & Discovery Package
+
+This section covers the marketing site and Chrome Web Store listing. Phase 1.5 runs in parallel with or immediately after Phase 1 extension development. It is not a prerequisite for shipping the extension, but must be ready before any paid growth effort begins.
+
+### Goal
+
+Capture organic search traffic from users actively experiencing the problems R3 solves. Target intents:
+
+**Problem keywords**
+- reddit post removed without notice
+- why was my reddit post removed
+- reddit post not showing up
+
+**Solution keywords**
+- reddit rules checker
+- reddit posting assistant
+- subreddit rules extension
+- reddit moderation tool
+
+**Mechanism keywords**
+- karma requirement checker
+- subreddit account age requirement
+- reddit visibility checker
+- reddit shadowban checker
+
+### Site architecture
+
+A public marketing site with the following pages:
+
+| Path | Intent |
+|---|---|
+| `/` | Homepage — broad commercial intent, install CTA |
+| `/reddit-rules-checker` | Solution keyword — rules display feature |
+| `/reddit-post-removed-without-notice` | Problem keyword — removal transparency |
+| `/reddit-karma-requirements-checker` | Mechanism keyword — karma predictor |
+| `/reddit-shadowban-checker` | Mechanism keyword — visibility/shadowban |
+| `/reddit-post-visibility-checker` | Mechanism keyword — post visibility |
+| `/reddit-posting-assistant` | Solution keyword — pre-post intelligence |
+| `/reddit-extension` | Broad extension discovery |
+| `/compare/r3-vs-manual-moderation` | Comparison page |
+| `/faq` | FAQ — structured data eligible |
+
+### On-page SEO requirements (every page)
+
+- Unique `<title>` tag
+- Unique `<meta name="description">`
+- One clear `<h1>` matching the page intent
+- Strong intro paragraph answering the search intent in the first 100 words
+- Problem → solution → proof → CTA structure
+- Internal links to at least 2 related pages
+- `<link rel="canonical">` self-referencing
+- Clean, keyword-reflecting URL slugs
+- Indexable HTML content — no thin JS-only shells; content must be server-rendered or statically generated
+
+### Structured data (JSON-LD)
+
+| Page type | Schema type |
+|---|---|
+| Homepage | `Organization`, `SoftwareApplication` |
+| Feature pages | `SoftwareApplication`, `BreadcrumbList` |
+| FAQ page | `FAQPage`, `BreadcrumbList` |
+| Comparison page | `BreadcrumbList` |
+
+All structured data must match visible page content exactly. No schema that describes features not present on the page.
+
+### Technical SEO checklist
+
+- [ ] XML sitemap at `/sitemap.xml`, submitted to Search Console and Bing Webmaster Tools
+- [ ] `robots.txt` present, no critical pages blocked
+- [ ] Self-referencing canonicals on all pages
+- [ ] Core Web Vitals pass for mobile (LCP < 2.5s, CLS < 0.1, INP < 200ms)
+- [ ] Correct HTTP status codes (no soft 404s)
+- [ ] No blocked CSS or JS required for rendering
+- [ ] Google Search Console property verified
+- [ ] Bing Webmaster Tools property verified
+- [ ] Rich Results Test passing for all structured data pages
+
+### Chrome Web Store listing
+
+Treat the store listing as an SEO page:
+
+- Title: exact value statement, includes primary keyword
+- First sentence: clear use case, no filler
+- Description: keyword-natural, problem → solution structure
+- Screenshots: annotated, show the panel in context on Reddit
+- Short demo video or GIF if permitted
+- Category: aligned with search intent (Productivity or Developer Tools)
+- Support URL and Privacy Policy URL present (required for publish)
+- Store listing wording matches marketing site wording — consistent brand signal
+
+### Content strategy
+
+Each page solves one specific search intent, not generic keyword stuffing:
+
+- "Why Reddit removes posts without telling you" — explains the 69% no-notice removal problem
+- "How to check subreddit rules before posting" — positions RulesBlock
+- "How karma and account age filters block posts" — positions RiskCard
+- "How to tell if your Reddit post is visible" — positions StatusCard
+- "Manual moderation vs R3" — comparison page driving conversions
+
+### Measurement
+
+Track from day one:
+
+| Metric | Tool |
+|---|---|
+| Impressions and clicks by page | Google Search Console |
+| Indexed pages | URL Inspection tool |
+| Brand vs non-brand clicks | Search Console filters |
+| Store listing impressions → install rate | Chrome Web Store dashboard |
+| Landing page → install conversion | Analytics (Plausible or GA4) |
+
+### Realistic expectation
+
+R3 will not rank #1 for all target keywords at launch. The realistic Phase 1.5 goal is:
+
+- Strong indexing of all pages within 4–6 weeks of publish
+- Long-tail traffic from specific problem and mechanism keywords within 8–12 weeks
+- Compounding installs from search + store discovery over 3–6 months
+- High-converting intent pages that outperform generic extension listings
+
+---
+
+## 17. Phase 2 Hooks
 
 These are not built in Phase 1 but the architecture explicitly leaves room for them:
 
@@ -392,3 +548,4 @@ These are not built in Phase 1 but the architecture explicitly leaves room for t
 - `StatusCard` Pro unlock — connect to shadowban monitor backend
 - `v1:logs` — surface log viewer in options page
 - Firefox-specific compatibility shims — add if manual testing reveals gaps
+- Phase 1.5 marketing site — deploy alongside or after Phase 1 extension ship
