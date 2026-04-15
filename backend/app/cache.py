@@ -1,3 +1,4 @@
+import math
 import time
 from typing import Any
 
@@ -34,7 +35,7 @@ class RateLimiter:
 
         if len(timestamps) >= max_requests:
             oldest = timestamps[0]
-            retry_after = int(window_seconds - (now - oldest)) + 1
+            retry_after = math.ceil(window_seconds - (now - oldest))
             self._windows[key] = timestamps
             return False, retry_after
 

@@ -47,3 +47,12 @@ class TestRateLimiter:
             rl.check("key-a", max_requests=3, window_seconds=10)
         allowed, _ = rl.check("key-b", max_requests=3, window_seconds=10)
         assert allowed is True
+
+    def test_window_expiry_unblocks_client(self):
+        rl = RateLimiter()
+        for _ in range(3):
+            rl.check("key", max_requests=3, window_seconds=1)
+        time.sleep(1.05)
+        allowed, retry_after = rl.check("key", max_requests=3, window_seconds=1)
+        assert allowed is True
+        assert retry_after == 0
