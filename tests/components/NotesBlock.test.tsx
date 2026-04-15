@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { NotesBlock } from '../../src/panel/components/NotesBlock';
 
 beforeEach(() => {
   localStorage.clear();
-  vi.useFakeTimers();
 });
 
 afterEach(() => {
@@ -26,10 +25,11 @@ describe('NotesBlock', () => {
   });
 
   it('persists notes to storage after debounce', async () => {
+    vi.useFakeTimers();
     render(<NotesBlock username="alice" subreddit="javascript" />);
     const textarea = screen.getByRole('textbox');
 
-    await userEvent.type(textarea, 'hello');
+    act(() => { fireEvent.change(textarea, { target: { value: 'hello' } }); });
     expect(localStorage.getItem('v1:user:alice:subreddit:javascript:notes')).toBeNull();
 
     act(() => { vi.advanceTimersByTime(350); });
@@ -48,8 +48,11 @@ describe('NotesBlock', () => {
   });
 
   it('uses guest key when username is null', async () => {
+    vi.useFakeTimers();
     render(<NotesBlock username={null} subreddit="javascript" />);
-    await userEvent.type(screen.getByRole('textbox'), 'guest note');
+    const textarea = screen.getByRole('textbox');
+
+    act(() => { fireEvent.change(textarea, { target: { value: 'guest note' } }); });
     act(() => { vi.advanceTimersByTime(350); });
     expect(localStorage.getItem('v1:user:guest:subreddit:javascript:notes')).toBe('guest note');
   });

@@ -9,7 +9,7 @@ export function StatusCard({ postId: _postId, username: _username }: Props) {
       <div className="r3-section__heading">Post Visibility</div>
       <div className="r3-pro-card">
         <div style={{ padding: '8px 0', opacity: 0.3 }}>
-          <span style={{ fontSize: 13, color: '#7c7c7c' }}>Unknown visibility</span>
+          <span style={{ fontSize: 13, color: '#7c7c7c' }}>Status unknown</span>
           <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Last checked: —</div>
         </div>
         <div className="r3-pro-overlay">
