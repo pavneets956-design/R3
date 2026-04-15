@@ -7,7 +7,7 @@ from app.cache import cache
 
 REDDIT_POST_URL = "https://www.reddit.com/r/{subreddit}/comments/{post_id}/.json"
 
-_SAFE_SEGMENT = re.compile(r'^[A-Za-z0-9_]{1,50}$')
+_SAFE_SEGMENT = re.compile(r'^[A-Za-z0-9_-]{1,50}$')
 
 
 async def get_post_status(post_id: str, subreddit: str) -> PostStatusResponse:

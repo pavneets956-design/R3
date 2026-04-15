@@ -79,31 +79,29 @@ async def test_risk_requires_auth(client):
 
 
 async def test_risk_rate_limit(client, auth_headers):
-    with patch("app.services.risk_service.get_reddit_client") as mock_get_client:
+    from unittest.mock import patch
+    from app.config import settings
+
+    with patch("app.services.risk_service.get_reddit_client") as mock_get_client, \
+         patch.object(settings, "dev_token", "test-token-ratelimit-risk"):
         mock_reddit = MagicMock()
         mock_reddit.redditor.return_value = _make_mock_redditor()
         mock_reddit.subreddit.return_value = _make_mock_subreddit()
         mock_reddit.subreddit.return_value.wiki.__getitem__.side_effect = Exception("forbidden")
         mock_get_client.return_value = mock_reddit
 
-        from app.config import settings
-        original_token = settings.dev_token
-        settings.dev_token = "test-token-ratelimit-risk"
         headers = {"Authorization": "Bearer test-token-ratelimit-risk"}
 
-        try:
-            for _ in range(5):
-                await client.post(
-                    "/api/v1/risk",
-                    json={"subreddit": "learnprogramming", "username": "u", "post_type": "text"},
-                    headers=headers,
-                )
-            resp = await client.post(
+        for _ in range(5):
+            await client.post(
                 "/api/v1/risk",
                 json={"subreddit": "learnprogramming", "username": "u", "post_type": "text"},
                 headers=headers,
             )
-        finally:
-            settings.dev_token = original_token
+        resp = await client.post(
+            "/api/v1/risk",
+            json={"subreddit": "learnprogramming", "username": "u", "post_type": "text"},
+            headers=headers,
+        )
 
     assert resp.status_code == 429

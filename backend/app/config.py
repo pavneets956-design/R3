@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     cache_ttl_risk: int = 300
     cache_ttl_post_status: int = 120
     cache_ttl_subreddit_meta: int = 3600
-    cors_origins: str = "*"
+    cors_origins: str = "*"  # Override in production with chrome-extension:// origin
 
 
 settings = Settings()
