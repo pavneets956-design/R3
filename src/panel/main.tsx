@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import panelStyles from './panel.css?inline';
 import { FloatingPanel } from './components/FloatingPanel';
+import { LicenseProvider } from './contexts/LicenseContext';
 import { markInstalled, isInstalled } from './storage';
 import { logEvent } from '../shared/logger';
 
@@ -28,5 +29,9 @@ export function mountR3Panel(): void {
   shadowRoot.appendChild(container);
 
   const root = createRoot(container);
-  root.render(<FloatingPanel />);
+  root.render(
+    <LicenseProvider>
+      <FloatingPanel />
+    </LicenseProvider>
+  );
 }
