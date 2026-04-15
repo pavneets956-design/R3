@@ -36,3 +36,15 @@ export interface UserPrefs {
   collapsedByDefault: boolean;
   guestMode: boolean;
 }
+
+export interface RiskSummaryResponse {
+  subreddit: string;
+  username: string;
+  risk_level: 'low' | 'medium' | 'high';
+  cached: boolean;
+}
+
+export interface LicenseState {
+  paid: boolean;
+  email: string;
+}

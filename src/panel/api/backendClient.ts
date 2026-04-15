@@ -1,3 +1,5 @@
+import type { RiskSummaryResponse } from '../../shared/types';
+
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string | undefined) ?? 'http://localhost:8000';
 export const PRO_TOKEN_KEY = 'r3_pro_token';
 
@@ -21,6 +23,13 @@ export async function clearProToken(): Promise<void> {
   return new Promise(resolve => {
     chrome.storage.local.remove([PRO_TOKEN_KEY], resolve);
   });
+}
+
+const PRO_EMAIL_KEY = 'r3_pro_email';
+
+export async function getProEmail(): Promise<string> {
+  const result = await chrome.storage.local.get(PRO_EMAIL_KEY);
+  return (result[PRO_EMAIL_KEY] as string) ?? '';
 }
 
 // ── Base fetch ─────────────────────────────────────────────────────────────
@@ -86,13 +95,6 @@ export interface RiskResponse {
 
 // ── API calls ──────────────────────────────────────────────────────────────
 
-export async function fetchLicense(): Promise<LicenseResponse> {
-  const resp = await backendFetch('/api/v1/license');
-  if (resp.status === 401) throw new Error('UNAUTHORIZED');
-  if (!resp.ok) throw new Error(`LICENSE_ERROR:${resp.status}`);
-  return resp.json() as Promise<LicenseResponse>;
-}
-
 export async function fetchPostStatus(
   postId: string,
   subreddit: string
@@ -124,4 +126,14 @@ export async function fetchRisk(
   }
   if (!resp.ok) throw new Error(`RISK_ERROR:${resp.status}`);
   return resp.json() as Promise<RiskResponse>;
+}
+
+export async function fetchRiskSummary(
+  subreddit: string,
+  username: string
+): Promise<RiskSummaryResponse> {
+  const params = new URLSearchParams({ subreddit, username });
+  const resp = await fetch(`${BACKEND_URL}/api/v1/risk-summary?${params}`);
+  if (!resp.ok) throw new Error(`RISK_SUMMARY_ERROR:${resp.status}`);
+  return resp.json() as Promise<RiskSummaryResponse>;
 }
