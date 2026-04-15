@@ -73,7 +73,7 @@ function RulesContent({ state, onRetry }: { state: RulesState; onRetry: () => vo
     return (
       <ul className="r3-rules__list">
         {state.rules.map((rule) => (
-          <li key={rule.priority} className="r3-rules__item">
+          <li key={`${rule.shortName}-${rule.priority}`} className="r3-rules__item">
             <div className="r3-rules__item-title">{rule.shortName}</div>
           </li>
         ))}

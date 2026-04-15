@@ -7,12 +7,13 @@ import { RiskCard } from './RiskCard';
 import { StatusCard } from './StatusCard';
 import { NotesBlock } from './NotesBlock';
 import { PanelFooter } from './PanelFooter';
+import { ErrorBoundary } from './ErrorBoundary';
 import type { PageContext } from '../../shared/types';
 
 export function FloatingPanel() {
   const ctx = usePageContext();
   const [collapsed, setCollapsed] = useState(false);
-  const firstInstall = !isInstalled();
+  const [firstInstall] = useState(() => !isInstalled());
 
   const username = ctx?.username ?? null;
 
@@ -83,20 +84,20 @@ function FullPanel({ ctx }: { ctx: PageContext }) {
   if (pageType === 'submit') {
     return (
       <>
-        <RiskCard subreddit={subreddit} username={username} />
-        <RulesBlock subreddit={subreddit} />
-        <StatusCard postId={postId} username={username} />
-        <NotesBlock username={username} subreddit={subreddit} />
+        <ErrorBoundary><RiskCard subreddit={subreddit} username={username} /></ErrorBoundary>
+        <ErrorBoundary><RulesBlock subreddit={subreddit} /></ErrorBoundary>
+        <ErrorBoundary><StatusCard postId={postId} username={username} /></ErrorBoundary>
+        <ErrorBoundary><NotesBlock username={username} subreddit={subreddit} /></ErrorBoundary>
       </>
     );
   }
 
   return (
     <>
-      <RulesBlock subreddit={subreddit} />
-      <RiskCard subreddit={subreddit} username={username} />
-      <StatusCard postId={postId} username={username} />
-      <NotesBlock username={username} subreddit={subreddit} />
+      <ErrorBoundary><RulesBlock subreddit={subreddit} /></ErrorBoundary>
+      <ErrorBoundary><RiskCard subreddit={subreddit} username={username} /></ErrorBoundary>
+      <ErrorBoundary><StatusCard postId={postId} username={username} /></ErrorBoundary>
+      <ErrorBoundary><NotesBlock username={username} subreddit={subreddit} /></ErrorBoundary>
     </>
   );
 }

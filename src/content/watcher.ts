@@ -43,6 +43,7 @@ export function stopWatcher(): void {
     observer.disconnect();
     observer = null;
   }
+  lastUrl = '';  // Reset so restarts don't miss first URL change
   onUrlChangeRef = () => undefined;
   (globalThis as Record<string, unknown>).__r3_observer__ = undefined;
   (globalThis as Record<string, unknown>).__r3_trigger__ = undefined;
