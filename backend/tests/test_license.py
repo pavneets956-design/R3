@@ -21,3 +21,4 @@ async def test_license_wrong_token(client):
         headers={"Authorization": "Bearer not-the-dev-token"},
     )
     assert resp.status_code == 401
+    assert resp.json()["detail"]["error"] == "unauthorized"
