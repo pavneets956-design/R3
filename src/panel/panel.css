@@ -1,0 +1,260 @@
+/* R3 Panel — all panel styles; injected into Shadow DOM, not document head */
+/* BEM naming with r3- prefix prevents any mental collision with Reddit's styles */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.r3-host {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 320px;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: #1a1a1b;
+}
+
+.r3-panel {
+  background: #ffffff;
+  border: 1px solid #edeff1;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.r3-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #ff4500;
+  color: #fff;
+  user-select: none;
+}
+
+.r3-header__title {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.r3-header__username {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.r3-header__toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* Body */
+.r3-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Section */
+.r3-section {
+  padding: 12px;
+  border-bottom: 1px solid #edeff1;
+}
+
+.r3-section:last-child {
+  border-bottom: none;
+}
+
+.r3-section__heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #7c7c7c;
+  margin-bottom: 8px;
+}
+
+/* Rules */
+.r3-rules__list {
+  list-style: none;
+}
+
+.r3-rules__item {
+  padding: 6px 0;
+  border-bottom: 1px solid #f2f2f2;
+  line-height: 1.4;
+}
+
+.r3-rules__item:last-child {
+  border-bottom: none;
+}
+
+.r3-rules__item-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* States */
+.r3-state {
+  padding: 12px;
+  text-align: center;
+  color: #7c7c7c;
+  font-size: 13px;
+}
+
+.r3-state--error {
+  color: #cc3300;
+}
+
+.r3-state__retry {
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: none;
+  border: 1px solid #cc3300;
+  border-radius: 4px;
+  color: #cc3300;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.r3-stale-badge {
+  display: inline-block;
+  font-size: 10px;
+  color: #7c7c7c;
+  background: #f2f2f2;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+}
+
+/* Pro lock overlay */
+.r3-pro-card {
+  position: relative;
+  min-height: 72px;
+}
+
+.r3-pro-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 4px;
+}
+
+.r3-pro-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff4500;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  background: #fff3f0;
+  border: 1px solid #ff4500;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.r3-pro-cta {
+  font-size: 12px;
+  color: #7c7c7c;
+}
+
+/* Risk / Status mock content */
+.r3-risk-level {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.r3-risk-level--medium {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* Notes */
+.r3-notes__textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+  border: 1px solid #edeff1;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.r3-notes__textarea:focus {
+  outline: 2px solid #ff4500;
+  outline-offset: 1px;
+}
+
+.r3-notes__count {
+  text-align: right;
+  font-size: 11px;
+  color: #7c7c7c;
+  margin-top: 4px;
+}
+
+/* Footer */
+.r3-footer {
+  padding: 8px 12px;
+  border-top: 1px solid #edeff1;
+  text-align: center;
+}
+
+.r3-footer__link {
+  font-size: 12px;
+  color: #7c7c7c;
+  text-decoration: none;
+}
+
+.r3-footer__link:hover {
+  text-decoration: underline;
+}
+
+/* Welcome state */
+.r3-welcome {
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.r3-welcome__title {
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: #ff4500;
+}
+
+.r3-welcome__body {
+  font-size: 13px;
+  color: #7c7c7c;
+  line-height: 1.5;
+}
+
+/* Minimal mode */
+.r3-minimal {
+  padding: 16px 12px;
+  text-align: center;
+  color: #7c7c7c;
+  font-size: 13px;
+}
