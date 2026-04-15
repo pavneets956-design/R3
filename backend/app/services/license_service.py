@@ -54,14 +54,3 @@ async def validate_license(email: str) -> bool:
 async def validate_license_stub(email: str) -> bool:
     """Stub mode: any non-empty email is treated as paid (dev only)."""
     return bool(email)
-
-
-def get_license():
-    """Legacy: kept for backward compat with existing route. Returns a stub response."""
-    from app.models import LicenseResponse, LicenseFeatures
-    return LicenseResponse(
-        valid=True,
-        plan="pro",
-        expires_at=None,
-        features=LicenseFeatures(risk=True, post_status=True),
-    )

@@ -10,7 +10,11 @@ extpay.startBackground();
 
 extpay.onPaid.addListener((user) => {
   // Store email as Pro bearer token in persistent storage
-  chrome.storage.local.set({ r3_pro_paid: true, r3_pro_email: user.email ?? '' });
+  chrome.storage.local.set({
+    r3_pro_paid: true,
+    r3_pro_email: user.email ?? '',
+    r3_pro_token: user.email ?? '',   // backendClient reads this key for Bearer auth
+  });
 
   // Notify all open panels so they re-render without a page reload
   chrome.runtime.sendMessage({ type: 'LICENSE_UPDATED', paid: true, email: user.email ?? '' }).catch(() => {

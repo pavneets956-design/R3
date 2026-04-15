@@ -80,10 +80,8 @@ async def test_risk_requires_auth(client):
 
 async def test_risk_rate_limit(client, auth_headers):
     from unittest.mock import patch
-    from app.config import settings
 
-    with patch("app.services.risk_service.get_reddit_client") as mock_get_client, \
-         patch.object(settings, "dev_token", "test-token-ratelimit-risk"):
+    with patch("app.services.risk_service.get_reddit_client") as mock_get_client:
         mock_reddit = MagicMock()
         mock_reddit.redditor.return_value = _make_mock_redditor()
         mock_reddit.subreddit.return_value = _make_mock_subreddit()

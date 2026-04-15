@@ -13,7 +13,7 @@ class RiskSummaryResponse(BaseModel):
 
 
 @router.get("/risk-summary", response_model=RiskSummaryResponse)
-def get_risk_summary(
+async def get_risk_summary(
     subreddit: str = Query(..., max_length=21),
     username: str = Query(..., max_length=20),
 ) -> RiskSummaryResponse:

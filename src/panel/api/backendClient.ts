@@ -50,18 +50,6 @@ async function backendFetch(path: string, options: RequestInit = {}): Promise<Re
 
 // ── Response types ─────────────────────────────────────────────────────────
 
-export interface LicenseFeatures {
-  risk: boolean;
-  post_status: boolean;
-}
-
-export interface LicenseResponse {
-  valid: boolean;
-  plan: string;
-  expires_at: string | null;
-  features: LicenseFeatures;
-}
-
 export interface PostStatusResponse {
   post_id: string;
   subreddit: string;
