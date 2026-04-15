@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Orange rounded square background -->
+  <rect width="128" height="128" rx="24" ry="24" fill="#ff4500"/>
+  <!-- White R3 text centered -->
+  <text
+    x="64"
+    y="82"
+    font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif"
+    font-size="62"
+    font-weight="700"
+    fill="white"
+    text-anchor="middle"
+    letter-spacing="-2"
+  >R3</text>
+</svg>
