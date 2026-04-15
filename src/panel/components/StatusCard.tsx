@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getProToken, fetchPostStatus } from '../api/backendClient';
-import type { PostStatusResponse } from '../api/backendClient';
+import { fetchPostStatus } from '../api/redditClient';
+import type { PostStatusResponse } from '../api/redditClient';
 import { useLicense } from '../contexts/LicenseContext';
 import { ProLock } from './ProLock';
 
@@ -11,11 +11,9 @@ interface Props {
 }
 
 type State =
-  | { type: 'no_token' }
   | { type: 'no_post_id' }
   | { type: 'loading' }
   | { type: 'success'; data: PostStatusResponse }
-  | { type: 'rate_limited'; retryAfter: number }
   | { type: 'error'; message: string };
 
 const REASON_LABELS: Record<string, string> = {
@@ -51,11 +49,6 @@ export function StatusCard({ postId, subreddit }: Props) {
     let cancelled = false;
 
     async function load() {
-      const token = await getProToken();
-      if (!token) {
-        if (!cancelled) setState({ type: 'no_token' });
-        return;
-      }
       if (!postId) {
         if (!cancelled) setState({ type: 'no_post_id' });
         return;
@@ -67,19 +60,7 @@ export function StatusCard({ postId, subreddit }: Props) {
         if (!cancelled) setState({ type: 'success', data });
       } catch (err) {
         if (cancelled) return;
-        const msg = err instanceof Error ? err.message : '';
-        if (msg.startsWith('RATE_LIMITED:')) {
-          const retryAfter = parseInt(msg.split(':')[1] ?? '', 10);
-          if (!isNaN(retryAfter)) {
-            setState({ type: 'rate_limited', retryAfter });
-          } else {
-            setState({ type: 'error', message: 'Service unavailable. Try again later.' });
-          }
-        } else if (msg === 'UNAUTHORIZED') {
-          setState({ type: 'no_token' });
-        } else {
-          setState({ type: 'error', message: 'Service unavailable. Try again later.' });
-        }
+        setState({ type: 'error', message: 'Service unavailable. Try again later.' });
       }
     }
 
@@ -96,17 +77,6 @@ export function StatusCard({ postId, subreddit }: Props) {
 }
 
 function StatusBody({ state }: { state: State }) {
-  if (state.type === 'no_token') {
-    return (
-      <div className="r3-pro-card">
-        <div className="r3-pro-overlay">
-          <span className="r3-pro-badge">Pro</span>
-          <span className="r3-pro-cta">Unlock to check if your post is visible</span>
-        </div>
-      </div>
-    );
-  }
-
   if (state.type === 'no_post_id') {
     return (
       <div style={{ padding: '8px 0', fontSize: 13, color: '#7c7c7c' }}>
@@ -119,14 +89,6 @@ function StatusBody({ state }: { state: State }) {
     return (
       <div style={{ padding: '8px 0', fontSize: 13, color: '#7c7c7c' }}>
         Checking visibility…
-      </div>
-    );
-  }
-
-  if (state.type === 'rate_limited') {
-    return (
-      <div style={{ padding: '8px 0', fontSize: 13, color: '#7c7c7c' }}>
-        Too many checks. Try again in {state.retryAfter}s.
       </div>
     );
   }

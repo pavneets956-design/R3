@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { RiskCard } from '../../src/panel/components/RiskCard';
-import * as backendClient from '../../src/panel/api/backendClient';
+import * as redditClient from '../../src/panel/api/redditClient';
 
-vi.mock('../../src/panel/api/backendClient', () => ({
-  getProToken: vi.fn(),
+vi.mock('../../src/panel/api/redditClient', () => ({
   fetchRisk: vi.fn(),
   fetchRiskSummary: vi.fn(),
 }));
@@ -39,7 +38,7 @@ describe('RiskCard — no username', () => {
 describe('RiskCard — loading', () => {
   it('shows loading state while fetching (free)', async () => {
     (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false, email: '' });
-    vi.mocked(backendClient.fetchRiskSummary).mockReturnValue(new Promise(() => {}));
+    vi.mocked(redditClient.fetchRiskSummary).mockReturnValue(new Promise(() => {}));
     await act(async () => {
       render(<RiskCard subreddit="javascript" username="testuser" />);
     });
@@ -48,7 +47,7 @@ describe('RiskCard — loading', () => {
 
   it('shows loading state while fetching (pro)', async () => {
     (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
-    vi.mocked(backendClient.fetchRisk).mockReturnValue(new Promise(() => {}));
+    vi.mocked(redditClient.fetchRisk).mockReturnValue(new Promise(() => {}));
     await act(async () => {
       render(<RiskCard subreddit="javascript" username="testuser" />);
     });
@@ -59,7 +58,7 @@ describe('RiskCard — loading', () => {
 describe('RiskCard — success (pro)', () => {
   it('shows low risk level', async () => {
     (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
-    vi.mocked(backendClient.fetchRisk).mockResolvedValue({
+    vi.mocked(redditClient.fetchRisk).mockResolvedValue({
       subreddit: 'javascript',
       username: 'testuser',
       risk_level: 'low',
@@ -76,7 +75,7 @@ describe('RiskCard — success (pro)', () => {
 
   it('shows high risk with factors', async () => {
     (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
-    vi.mocked(backendClient.fetchRisk).mockResolvedValue({
+    vi.mocked(redditClient.fetchRisk).mockResolvedValue({
       subreddit: 'javascript',
       username: 'newuser',
       risk_level: 'high',
@@ -98,7 +97,7 @@ describe('RiskCard — success (pro)', () => {
 describe('RiskCard — error (pro)', () => {
   it('shows error message on service failure', async () => {
     (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
-    vi.mocked(backendClient.fetchRisk).mockRejectedValue(new Error('RISK_ERROR:503'));
+    vi.mocked(redditClient.fetchRisk).mockRejectedValue(new Error('RISK_ERROR:503'));
     await act(async () => {
       render(<RiskCard subreddit="javascript" username="testuser" />);
     });
@@ -109,7 +108,7 @@ describe('RiskCard — error (pro)', () => {
 describe('RiskCard — free tier', () => {
   it('shows risk level for free users via risk-summary', async () => {
     (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false, email: '' });
-    vi.spyOn(backendClient, 'fetchRiskSummary').mockResolvedValue({
+    vi.spyOn(redditClient, 'fetchRiskSummary').mockResolvedValue({
       subreddit: 'python',
       username: 'testuser',
       risk_level: 'high',
@@ -124,7 +123,7 @@ describe('RiskCard — free tier', () => {
 
   it('shows ProLock rows for breakdown in free tier', async () => {
     (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false, email: '' });
-    vi.spyOn(backendClient, 'fetchRiskSummary').mockResolvedValue({
+    vi.spyOn(redditClient, 'fetchRiskSummary').mockResolvedValue({
       subreddit: 'python',
       username: 'testuser',
       risk_level: 'medium',
@@ -143,7 +142,7 @@ describe('RiskCard — free tier', () => {
       paid: true,
       email: 'user@example.com',
     });
-    vi.spyOn(backendClient, 'fetchRisk').mockResolvedValue({
+    vi.spyOn(redditClient, 'fetchRisk').mockResolvedValue({
       subreddit: 'python',
       username: 'testuser',
       risk_level: 'high',

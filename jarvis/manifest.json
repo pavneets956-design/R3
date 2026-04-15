@@ -1,11 +1,11 @@
 {
   "version": 1,
   "project": "R3 Browser Extension",
-  "updated": "2026-04-14T12:00:00.000Z",
+  "updated": "2026-04-15T00:00:00.000Z",
   "counts": {
     "inbox": 0,
     "in_progress": 0,
-    "done": 10,
+    "done": 11,
     "blocked": 0
   },
   "tasks": [
@@ -118,9 +118,24 @@
       "deliverable": "jarvis/briefings/stripe-extension-integration.md",
       "created": "2026-04-14",
       "updated": "2026-04-14"
+    },
+    {
+      "id": "R011",
+      "title": "Phase 2 Backend Implementation",
+      "agent": "jarvis-ops",
+      "priority": "high",
+      "status": "done",
+      "file": "jarvis/tasks/done/R011-phase2-backend-impl.md",
+      "deliverable": "backend/ — FastAPI + PRAW service, 38 tests passing, Fly.io deployment config ready",
+      "created": "2026-04-14",
+      "updated": "2026-04-15"
     }
   ],
   "recent_activity": [
+    {
+      "ts": "2026-04-15T00:00:00.000Z",
+      "event": "R011 marked done. Backend implementation complete (FastAPI + PRAW, 38 tests, Fly.io config). CORS and Reddit OAuth creds require owner action."
+    },
     {
       "ts": "2026-04-14T12:00:00.000Z",
       "event": "DRIVE SESSION COMPLETE. R002 unblocked (Plan A: PRAW). R003-R010 all done. 9 deliverables produced."

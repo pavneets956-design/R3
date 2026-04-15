@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { StatusCard } from '../../src/panel/components/StatusCard';
-import * as backendClient from '../../src/panel/api/backendClient';
+import * as redditClient from '../../src/panel/api/redditClient';
 
-vi.mock('../../src/panel/api/backendClient', () => ({
-  getProToken: vi.fn(),
+vi.mock('../../src/panel/api/redditClient', () => ({
   fetchPostStatus: vi.fn(),
 }));
 
@@ -19,19 +18,8 @@ beforeEach(() => {
   (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'user@example.com' });
 });
 
-describe('StatusCard — no token', () => {
-  it('shows Pro overlay when token is missing', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue(null);
-    await act(async () => {
-      render(<StatusCard postId="abc123" username="user1" subreddit="learnprogramming" />);
-    });
-    expect(screen.getByText('Pro')).toBeInTheDocument();
-  });
-});
-
 describe('StatusCard — no post ID', () => {
   it('shows submission prompt when postId is null', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
     await act(async () => {
       render(<StatusCard postId={null} username="user1" subreddit="learnprogramming" />);
     });
@@ -41,8 +29,7 @@ describe('StatusCard — no post ID', () => {
 
 describe('StatusCard — loading', () => {
   it('shows loading state while fetching', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
-    vi.mocked(backendClient.fetchPostStatus).mockReturnValue(new Promise(() => {}));
+    vi.mocked(redditClient.fetchPostStatus).mockReturnValue(new Promise(() => {}));
     await act(async () => {
       render(<StatusCard postId="abc123" username="user1" subreddit="learnprogramming" />);
     });
@@ -52,8 +39,7 @@ describe('StatusCard — loading', () => {
 
 describe('StatusCard — success', () => {
   it('shows visible status', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
-    vi.mocked(backendClient.fetchPostStatus).mockResolvedValue({
+    vi.mocked(redditClient.fetchPostStatus).mockResolvedValue({
       post_id: 'abc123',
       subreddit: 'learnprogramming',
       status: 'visible',
@@ -69,8 +55,7 @@ describe('StatusCard — success', () => {
   });
 
   it('shows removed status with reason hint', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
-    vi.mocked(backendClient.fetchPostStatus).mockResolvedValue({
+    vi.mocked(redditClient.fetchPostStatus).mockResolvedValue({
       post_id: 'abc123',
       subreddit: 'learnprogramming',
       status: 'removed',
@@ -88,8 +73,7 @@ describe('StatusCard — success', () => {
 
 describe('StatusCard — error', () => {
   it('shows service unavailable on error', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
-    vi.mocked(backendClient.fetchPostStatus).mockRejectedValue(new Error('POST_STATUS_ERROR:503'));
+    vi.mocked(redditClient.fetchPostStatus).mockRejectedValue(new Error('network error'));
     await act(async () => {
       render(<StatusCard postId="abc123" username="user1" subreddit="learnprogramming" />);
     });
@@ -108,7 +92,7 @@ describe('StatusCard — free tier', () => {
 
   it('does not call fetchPostStatus for free users', () => {
     (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false });
-    const spy = vi.spyOn(backendClient, 'fetchPostStatus');
+    const spy = vi.spyOn(redditClient, 'fetchPostStatus');
     render(<StatusCard postId="abc123" username="testuser" subreddit="python" />);
     expect(spy).not.toHaveBeenCalled();
   });
@@ -120,8 +104,7 @@ describe('StatusCard — pro tier', () => {
       paid: true,
       email: 'user@example.com',
     });
-    vi.spyOn(backendClient, 'getProToken').mockResolvedValue('user@example.com');
-    vi.spyOn(backendClient, 'fetchPostStatus').mockResolvedValue({
+    vi.spyOn(redditClient, 'fetchPostStatus').mockResolvedValue({
       post_id: 'abc123',
       subreddit: 'python',
       status: 'removed',

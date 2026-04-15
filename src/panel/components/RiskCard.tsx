@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { fetchRisk, fetchRiskSummary } from '../api/backendClient';
-import type { RiskResponse } from '../api/backendClient';
+import { fetchRisk, fetchRiskSummary } from '../api/redditClient';
+import type { RiskResponse } from '../api/redditClient';
 import { useLicense } from '../contexts/LicenseContext';
 import { ProLock } from './ProLock';
 import type { RiskSummaryResponse } from '../../shared/types';

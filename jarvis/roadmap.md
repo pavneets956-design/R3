@@ -1,6 +1,6 @@
 # R3 JARVIS Roadmap
 
-**Last updated:** 2026-04-14 (drive session complete)
+**Last updated:** 2026-04-15 (R011 backend implementation marked done)
 **Project:** R3 Browser Extension
 
 ---
@@ -87,6 +87,22 @@
 
 ---
 
+### R011 — Phase 2 Backend Implementation
+**Status:** done
+**Completed:** 2026-04-14
+**Deliverable:** `backend/` — FastAPI + PRAW service, 38 tests passing, Fly.io deployment config ready
+**Notes:** Implemented per R009 spec. Rate limiting (60 req/min), Redis cache, async endpoints, UUID validation. CORS currently `*` — locked to env var in this session. Reddit OAuth creds and Fly.io deploy still require owner action.
+
+---
+
+### R014 — CWS Listing Description
+**Status:** done
+**Completed:** 2026-04-15
+**Deliverable:** `jarvis/drafts/cws-listing-description.md`
+**Notes:** Short description (80 chars, 52 under limit) and full description (~1400 chars) ready for CWS submission form. Adapted from R006 landing page copy; 69% stat excluded per R006 unverified flag. Plain-text format. Support email placeholder needs owner confirmation.
+
+---
+
 ## Now — Awaiting Owner Action
 
 ### Before Chrome Web Store Submission
@@ -110,13 +126,6 @@ No blocked items remain in the roadmap. JARVIS can:
 ---
 
 ## Later (30–90 days)
-
-### R011 — Phase 2 Backend Implementation
-**Status:** todo (new — not yet planned)
-**Priority:** high
-**Depends on:** R009 (done), Pro revenue to justify hosting cost
-**Goal:** Implement the FastAPI + PRAW backend per the R009 spec. Deploy to Fly.io. Wire RiskCard and StatusCard to real API endpoints.
-**Deliverable:** Running backend service at a stable URL
 
 ### R012 — Marketing Site Build
 **Status:** todo
