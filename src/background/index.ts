@@ -4,7 +4,7 @@ import ExtPay from 'extpay';
 // MV3 service workers are non-persistent — they cold-start on every event.
 // Registering inside onInstalled/onStartup alone would miss wakes triggered by
 // alarms or messages. Top-level registration runs on every SW instantiation.
-const extpay = ExtPay('r3-reddit-rules'); // Replace with your ExtensionPay extension slug
+const extpay = ExtPay('r3--reddit-rules-enforcer');
 
 extpay.startBackground();
 

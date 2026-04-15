@@ -1,7 +1,7 @@
 import ExtPay from 'extpay';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-const extpay = ExtPay('r3-reddit-rules'); // Same slug as background/index.ts
+const extpay = ExtPay('r3--reddit-rules-enforcer');
 
 interface LicenseContextValue {
   paid: boolean;
