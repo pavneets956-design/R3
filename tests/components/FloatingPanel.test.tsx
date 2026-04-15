@@ -5,6 +5,22 @@ import { FloatingPanel } from '../../src/panel/components/FloatingPanel';
 import { bridge } from '../../src/content/bridge';
 import type { PageContext } from '../../src/shared/types';
 
+// Mock extpay to avoid browser-polyfill error in jsdom
+vi.mock('extpay', () => ({
+  default: () => ({
+    startBackground: vi.fn(),
+    openPaymentPage: vi.fn(),
+    getUser: vi.fn().mockResolvedValue({ paid: false, email: null }),
+    onPaid: { addListener: vi.fn() },
+  }),
+}));
+
+// Mock LicenseContext to avoid chrome.storage calls
+vi.mock('../../src/panel/contexts/LicenseContext', () => ({
+  LicenseProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useLicense: () => ({ paid: false, email: '', openPaymentPage: vi.fn() }),
+}));
+
 // chrome.runtime.getURL not available in jsdom
 // chrome.storage.local needed by StatusCard's getProToken (returns null → Pro overlay)
 vi.stubGlobal('chrome', {
