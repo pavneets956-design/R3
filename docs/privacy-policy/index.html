@@ -143,7 +143,7 @@
     <p>
       R3 is a browser extension that displays subreddit rules and posting requirements
       directly on Reddit.com. It helps you see the rules of any subreddit before you
-      post, and in future versions, will detect whether your post was silently removed.
+      post, checks your account risk, and detects whether your post was silently removed.
     </p>
 
     <!-- ─── What Data R3 Collects ─── -->
@@ -186,7 +186,7 @@
     <h2>What Data R3 Does NOT Collect</h2>
     <ul>
       <li>R3 does not collect any personally identifiable information</li>
-      <li>R3 does not transmit any data to R3's servers or any third-party servers (Phase 1 only)</li>
+      <li>R3 does not transmit any data to R3's servers or any third-party servers</li>
       <li>R3 does not track your browsing history</li>
       <li>R3 does not use cookies</li>
       <li>R3 does not use analytics services</li>
@@ -249,30 +249,31 @@
           <td>Access to <code>reddit.com</code></td>
           <td>
             To inject the R3 panel into Reddit pages you visit, and to fetch subreddit
-            rules from Reddit's public API
+            rules, account data, and post status from Reddit's public JSON endpoints
           </td>
+        </tr>
+        <tr>
+          <td>Access to <code>extensionpay.com</code></td>
+          <td>To verify your Pro license status with ExtensionPay</td>
         </tr>
       </tbody>
     </table>
 
-    <!-- ─── Future Versions ─── -->
-    <h2>Future Versions (Phase 2 Notice)</h2>
-    <p>A future version of R3 will introduce:</p>
-    <ul>
-      <li>A backend service for real-time post visibility and removal detection</li>
-      <li>
-        A paid Pro tier (payment processed via a third-party payment provider, not
-        handled by R3 directly)
-      </li>
-    </ul>
-    <p>When these features are introduced, this privacy policy will be updated to describe:</p>
-    <ul>
-      <li>What data is sent to R3's backend</li>
-      <li>How it is stored and for how long</li>
-      <li>The payment processor used and what data they receive</li>
-    </ul>
+    <!-- ─── Pro Tier ─── -->
+    <h2>Pro Tier &amp; Payments</h2>
     <p>
-      You will be notified of material changes to this policy via an extension update.
+      R3 offers an optional paid Pro tier. Payments are processed by
+      <strong>ExtensionPay</strong> (a third-party payment provider powered by Stripe).
+      R3 does not handle payment card data directly. When you purchase Pro, ExtensionPay
+      and Stripe's privacy policies apply to your payment information.
+    </p>
+    <p>
+      R3 stores a license token in <code>chrome.storage.sync</code> to verify your Pro
+      status. This token is provided by ExtensionPay and does not contain payment details.
+    </p>
+    <p>
+      If we make material changes to how Pro data is handled, this policy will be updated
+      and you will be notified via an extension update.
     </p>
 
     <!-- ─── Children's Privacy ─── -->
