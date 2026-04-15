@@ -214,13 +214,36 @@ All configuration read from environment variables, never scattered across files.
 3. Service compares and scores per factor
 4. Derives `risk_level` and `confidence` from factor count/weight
 
+**Graceful degradation rule (hard requirement):**
+The risk service must never fail due to missing Reddit data. If any signal is unavailable (wiki blocked, automod inaccessible, sparse user history, rate limit on a sub-call):
+- omit that factor from `factors`
+- reduce `confidence` accordingly
+- still return a valid response with whatever signals were available
+- never propagate a Reddit API error as a 503 unless PRAW itself is completely broken
+
 **Cache keys:**
 - `risk:{subreddit}:{username}:{post_type}` — TTL 5 minutes
 - `subreddit_meta:{subreddit}` — TTL 1 hour
 
 ---
 
-## 7. Cache Strategy
+## 7. Rate Limiting
+
+Simple per-token rate limiting enforced in middleware or a decorator on each route. No external dependency needed — in-memory counter with sliding window.
+
+| Endpoint | Limit |
+|---|---|
+| GET /api/v1/post-status | 10 requests / 10 seconds per token |
+| POST /api/v1/risk | 5 requests / 10 seconds per token |
+| GET /api/v1/license | no limit (cheap, cached client-side) |
+
+On limit exceeded: `429 { "error": "rate_limited", "retry_after": N }` where N is seconds until the window resets.
+
+Rate limit counters stored in-memory alongside the cache. Keys: `ratelimit:{token}:{endpoint}`.
+
+---
+
+## 9. Cache Strategy
 
 In-memory dict with TTL stored alongside each entry. No Redis in Phase 2.
 
@@ -235,7 +258,7 @@ Cache keys defined above in §6. No other cache keys. TTLs sourced from `config.
 
 ---
 
-## 8. Error Handling
+## 10. Error Handling
 
 ### Backend responses
 
@@ -258,13 +281,14 @@ Cache keys defined above in §6. No other cache keys. TTLs sourced from `config.
 
 ---
 
-## 9. Extension Wiring
+## 11. Extension Wiring
 
 New file: `src/panel/api/backendClient.ts`
-- Reads backend base URL from `config.py` equivalent (env var at build time or options page)
+- Reads backend base URL from env var at build time or options page
 - Attaches `Authorization: Bearer {token}` header to all requests
 - Token sourced from `chrome.storage.local`
 - Exports `fetchLicense()`, `fetchPostStatus()`, `fetchRisk()`
+- **Token missing rule:** if token is absent from storage, fall back to guest mode immediately — do not send a request with empty or invalid auth. Guest mode shows the Pro overlay with "Upgrade to Pro" CTA.
 
 RiskCard and StatusCard are updated per slice:
 - Replace static mock markup with loading/error/success states
@@ -272,7 +296,7 @@ RiskCard and StatusCard are updated per slice:
 
 ---
 
-## 10. Testing
+## 12. Testing
 
 **Backend:**
 - `pytest` + HTTPX test client
@@ -289,7 +313,7 @@ RiskCard and StatusCard are updated per slice:
 
 ---
 
-## 11. Deployment
+## 13. Deployment
 
 **Local dev:**
 ```bash
@@ -304,7 +328,7 @@ uvicorn app.main:app --reload --port 8000
 
 ---
 
-## 12. What Stays Local (No Backend)
+## 14. What Stays Local (No Backend)
 
 - Subreddit rules display — still fetched directly from Reddit JSON by the browser
 - Per-subreddit notes — still localStorage
