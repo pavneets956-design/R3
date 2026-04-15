@@ -88,7 +88,7 @@ async def test_risk_rate_limit(client, auth_headers):
         mock_reddit.subreddit.return_value.wiki.__getitem__.side_effect = Exception("forbidden")
         mock_get_client.return_value = mock_reddit
 
-        headers = {"Authorization": "Bearer test-token-ratelimit-risk"}
+        headers = {"Authorization": "Bearer c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f"}
 
         for _ in range(5):
             await client.post(

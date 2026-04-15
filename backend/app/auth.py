@@ -7,9 +7,9 @@ from app.services.license_service import validate_license, LicenseServiceError
 
 async def require_token(authorization: Optional[str] = Header(default=None)) -> str:
     """
-    Validates Authorization: Bearer <email> header against ExtensionPay.
-    Returns the email (used as rate-limit key).
-    Raises 401 if missing/invalid, 403 if unpaid, 503 if ExtensionPay is down.
+    Validates Authorization: Bearer <api_key> header against ExtensionPay.
+    Returns the api_key (used as rate-limit key).
+    Raises 401 if missing/malformed, 403 if unpaid, 503 if ExtensionPay is down.
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail={"error": "unauthorized"})

@@ -6,7 +6,6 @@ from httpx import AsyncClient, ASGITransport
 os.environ.setdefault("REDDIT_CLIENT_ID", "test-client-id")
 os.environ.setdefault("REDDIT_CLIENT_SECRET", "test-client-secret")
 os.environ.setdefault("LICENSE_MODE", "stub")
-os.environ.setdefault("DEV_TOKEN", "test-token")
 
 from app.main import app  # noqa: E402
 
@@ -19,4 +18,5 @@ async def client():
 
 @pytest.fixture
 def auth_headers():
-    return {"Authorization": "Bearer test-token"}
+    # Valid UUID v4 format (matches ExtPay api_key shape). Stub mode accepts any non-empty UUID.
+    return {"Authorization": "Bearer a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"}
