@@ -24,6 +24,7 @@ def _make_mock_redditor(karma=500, created_days_ago=120):
 def _make_mock_subreddit(submission_type="any"):
     mock_sub = MagicMock()
     mock_sub.submission_type = submission_type
+    mock_sub.link_flair_required = False
     return mock_sub
 
 

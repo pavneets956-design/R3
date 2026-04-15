@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ── License ───────────────────────────────────────────────────────────────────
@@ -52,8 +52,8 @@ class RiskFactor(BaseModel):
 
 
 class RiskRequest(BaseModel):
-    subreddit: str
-    username: str
+    subreddit: str = Field(..., max_length=21)
+    username: str = Field(..., max_length=20)
     post_type: PostType = "unknown"
 
 

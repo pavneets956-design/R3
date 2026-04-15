@@ -152,6 +152,9 @@ def _parse_automod_thresholds(automod_text: str) -> dict:
     """Extract karma/age thresholds from automod config YAML text."""
     thresholds: dict = {}
 
+    # TODO: the regex captures the threshold number but discards the operator (< vs >).
+    # A rule like "combined_karma > 1000" (ceiling/spam filter) would be wrongly treated
+    # as a minimum threshold. Phase 3 should parse the operator and skip ceiling rules.
     karma_match = re.search(
         r"(?:combined_karma|link_karma|comment_karma)\s*[<>]?\s*(\d+)",
         automod_text,
