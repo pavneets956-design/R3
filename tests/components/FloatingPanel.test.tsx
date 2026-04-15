@@ -75,8 +75,8 @@ describe('FloatingPanel', () => {
     render(<FloatingPanel />);
     act(() => { bridge.emit(makeCtx({ pageType: 'feed' })); });
     expect(screen.getByText(/subreddit rules/i)).toBeInTheDocument();
-    expect(screen.getByText(/posting risk/i)).toBeInTheDocument();
-    expect(screen.getByText(/post visibility/i)).toBeInTheDocument();
+    expect(screen.getByText(/account risk/i)).toBeInTheDocument();
+    expect(screen.getByText(/post removal detection/i)).toBeInTheDocument();
     expect(screen.getByText(/my notes/i)).toBeInTheDocument();
   });
 
@@ -97,7 +97,7 @@ describe('FloatingPanel', () => {
     render(<FloatingPanel />);
     act(() => { bridge.emit(makeCtx({ pageType: 'submit' })); });
     // RiskCard should appear before RulesBlock in submit mode
-    const headings = screen.getAllByText(/posting risk|subreddit rules/i);
-    expect(headings[0]).toHaveTextContent(/posting risk/i);
+    const headings = screen.getAllByText(/account risk|subreddit rules/i);
+    expect(headings[0]).toHaveTextContent(/account risk/i);
   });
 });
