@@ -48,7 +48,12 @@ export function StatusCard({ postId, subreddit }: Props) {
         if (cancelled) return;
         const msg = err instanceof Error ? err.message : '';
         if (msg.startsWith('RATE_LIMITED:')) {
-          setState({ type: 'rate_limited', retryAfter: Number(msg.split(':')[1]) });
+          const retryAfter = parseInt(msg.split(':')[1] ?? '', 10);
+          if (!isNaN(retryAfter)) {
+            setState({ type: 'rate_limited', retryAfter });
+          } else {
+            setState({ type: 'error', message: 'Service unavailable. Try again later.' });
+          }
         } else if (msg === 'UNAUTHORIZED') {
           setState({ type: 'no_token' });
         } else {

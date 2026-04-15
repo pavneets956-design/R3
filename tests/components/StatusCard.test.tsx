@@ -22,6 +22,16 @@ describe('StatusCard — no token', () => {
   });
 });
 
+describe('StatusCard — no post ID', () => {
+  it('shows submission prompt when postId is null', async () => {
+    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
+    await act(async () => {
+      render(<StatusCard postId={null} username="user1" subreddit="learnprogramming" />);
+    });
+    expect(screen.getByText(/submit a post/i)).toBeInTheDocument();
+  });
+});
+
 describe('StatusCard — loading', () => {
   it('shows loading state while fetching', async () => {
     vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
