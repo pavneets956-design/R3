@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { getPrefs, setPrefs, clearAllData } from '../panel/storage';
 import { clearLogs } from '../shared/logger';
+import { getProToken, setProToken, clearProToken } from '../panel/api/backendClient';
 import type { UserPrefs } from '../shared/types';
 
 const GUEST_USERNAME = 'guest';
@@ -58,6 +59,8 @@ function OptionsApp() {
         />
       </section>
 
+      <ProTokenSection />
+
       <section style={{ background: '#fff', borderRadius: 8, border: '1px solid #edeff1', padding: 24 }}>
         <div style={{ marginBottom: 8, fontWeight: 600 }}>Clear cached data</div>
         <div style={{ fontSize: 13, color: '#7c7c7c', marginBottom: 16 }}>
@@ -79,6 +82,75 @@ function OptionsApp() {
         </button>
       </section>
     </div>
+  );
+}
+
+function ProTokenSection() {
+  const [token, setTokenState] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getProToken().then(t => { if (t) setTokenState(t); });
+  }, []);
+
+  async function handleSave() {
+    setSaveError(null);
+    try {
+      const trimmed = token.trim();
+      if (trimmed) {
+        await setProToken(trimmed);
+      } else {
+        await clearProToken();
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setSaveError('Failed to save token. Try again.');
+    }
+  }
+
+  return (
+    <section style={{ background: '#fff', borderRadius: 8, border: '1px solid #edeff1', padding: 24, marginBottom: 24 }}>
+      <div style={{ marginBottom: 8, fontWeight: 600 }}>Pro license token</div>
+      <div style={{ fontSize: 13, color: '#7c7c7c', marginBottom: 12 }}>
+        Enter your Pro license token to unlock risk scoring and post visibility checks.
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          type="text"
+          value={token}
+          onChange={e => setTokenState(e.target.value)}
+          placeholder="dev-token-phase2"
+          style={{
+            flex: 1,
+            padding: '8px 12px',
+            border: '1px solid #edeff1',
+            borderRadius: 4,
+            fontSize: 13,
+            fontFamily: 'monospace',
+          }}
+        />
+        <button
+          onClick={handleSave}
+          style={{
+            padding: '8px 16px',
+            background: saved ? '#4caf50' : '#ff4500',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 4,
+            cursor: 'pointer',
+            fontWeight: 600,
+            flexShrink: 0,
+          }}
+        >
+          {saved ? 'Saved!' : 'Save'}
+        </button>
+      </div>
+      {saveError && (
+        <div style={{ fontSize: 12, color: '#cc3300', marginTop: 8 }}>{saveError}</div>
+      )}
+    </section>
   );
 }
 

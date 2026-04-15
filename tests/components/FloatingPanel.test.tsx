@@ -6,8 +6,14 @@ import { bridge } from '../../src/content/bridge';
 import type { PageContext } from '../../src/shared/types';
 
 // chrome.runtime.getURL not available in jsdom
+// chrome.storage.local needed by StatusCard's getProToken (returns null → Pro overlay)
 vi.stubGlobal('chrome', {
   runtime: { getURL: (p: string) => `chrome-extension://fake/${p}` },
+  storage: {
+    local: {
+      get: (_keys: string[], cb: (result: Record<string, unknown>) => void) => cb({}),
+    },
+  },
 });
 
 function makeCtx(overrides: Partial<PageContext> = {}): PageContext {

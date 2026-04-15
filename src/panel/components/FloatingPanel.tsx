@@ -86,7 +86,7 @@ function FullPanel({ ctx }: { ctx: PageContext }) {
       <>
         <ErrorBoundary><RiskCard subreddit={subreddit} username={username} /></ErrorBoundary>
         <ErrorBoundary><RulesBlock subreddit={subreddit} /></ErrorBoundary>
-        <ErrorBoundary><StatusCard postId={postId} username={username} /></ErrorBoundary>
+        <ErrorBoundary><StatusCard postId={postId} username={username} subreddit={subreddit} /></ErrorBoundary>
         <ErrorBoundary><NotesBlock username={username} subreddit={subreddit} /></ErrorBoundary>
       </>
     );
@@ -96,7 +96,7 @@ function FullPanel({ ctx }: { ctx: PageContext }) {
     <>
       <ErrorBoundary><RulesBlock subreddit={subreddit} /></ErrorBoundary>
       <ErrorBoundary><RiskCard subreddit={subreddit} username={username} /></ErrorBoundary>
-      <ErrorBoundary><StatusCard postId={postId} username={username} /></ErrorBoundary>
+      <ErrorBoundary><StatusCard postId={postId} username={username} subreddit={subreddit} /></ErrorBoundary>
       <ErrorBoundary><NotesBlock username={username} subreddit={subreddit} /></ErrorBoundary>
     </>
   );
