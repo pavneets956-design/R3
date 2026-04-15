@@ -11,6 +11,8 @@ async def require_token(authorization: Optional[str] = Header(default=None)) -> 
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail={"error": "unauthorized"})
     token = authorization[7:].strip()
+    if not token:
+        raise HTTPException(status_code=401, detail={"error": "unauthorized"})
     if settings.license_mode == "stub" and token == settings.dev_token:
         return token
     raise HTTPException(status_code=401, detail={"error": "unauthorized"})
