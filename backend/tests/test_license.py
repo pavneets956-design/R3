@@ -15,10 +15,11 @@ async def test_license_missing_token(client):
     assert resp.json()["detail"]["error"] == "unauthorized"
 
 
-async def test_license_wrong_token(client):
+async def test_license_stub_mode_accepts_any_nonempty_token(client):
+    # In stub mode, validate_license_stub returns True for any non-empty bearer value.
+    # DEV_TOKEN is no longer the gating check — that was the old stub auth.
     resp = await client.get(
         "/api/v1/license",
         headers={"Authorization": "Bearer not-the-dev-token"},
     )
-    assert resp.status_code == 401
-    assert resp.json()["detail"]["error"] == "unauthorized"
+    assert resp.status_code == 200

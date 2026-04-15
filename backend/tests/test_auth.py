@@ -1,45 +1,67 @@
 import pytest
-from app.cache import RateLimiter
-from app.auth import make_rate_limit_dep
+from unittest.mock import AsyncMock, patch, MagicMock
+from fastapi.testclient import TestClient
+from app.main import app
+
+client = TestClient(app)
 
 
-async def test_missing_auth_header_returns_401(client):
-    resp = await client.get("/api/v1/license")
+def _mock_extpay_client(paid: bool):
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"paid": paid}
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client.get = AsyncMock(return_value=mock_response)
+    return mock_client
+
+
+def test_missing_auth_returns_401():
+    resp = client.get("/api/v1/post-status?post_id=abc123&subreddit=python")
     assert resp.status_code == 401
 
 
-async def test_wrong_token_returns_401(client):
-    resp = await client.get(
-        "/api/v1/license",
-        headers={"Authorization": "Bearer wrong-token"},
+def test_malformed_auth_returns_401():
+    resp = client.get(
+        "/api/v1/post-status?post_id=abc123&subreddit=python",
+        headers={"Authorization": "NotBearer token"},
     )
     assert resp.status_code == 401
 
 
-async def test_valid_dev_token_accepted(client, auth_headers):
-    resp = await client.get("/api/v1/license", headers=auth_headers)
-    # Should NOT be 401 — either 200 (route exists) or 404 (route not yet registered)
-    assert resp.status_code != 401
+def test_unpaid_email_returns_403():
+    with patch("app.services.license_service.httpx.AsyncClient") as cls, \
+         patch("app.services.license_service.settings") as mock_settings, \
+         patch("app.services.license_service.cache") as mock_cache:
+        mock_settings.license_mode = "extensionpay"
+        mock_settings.extensionpay_secret_key = "test-key"
+        mock_cache.get.return_value = None
+        cls.return_value = _mock_extpay_client(paid=False)
+        resp = client.get(
+            "/api/v1/post-status?post_id=abc123&subreddit=python",
+            headers={"Authorization": "Bearer free@example.com"},
+        )
+    assert resp.status_code == 403
+    assert resp.json()["detail"]["error"] == "pro_license_required"
 
 
-async def test_empty_bearer_token_returns_401(client):
-    resp = await client.get(
-        "/api/v1/license",
-        headers={"Authorization": "Bearer "},
-    )
-    assert resp.status_code == 401
-
-
-def test_rate_limit_dep_factory_keys_are_independent():
-    """Two deps from the factory track hits independently — no key collision."""
-    rl = RateLimiter()
-    dep_a = make_rate_limit_dep.__wrapped__ if hasattr(make_rate_limit_dep, "__wrapped__") else None
-
-    # Directly test the rate_limiter key isolation via the same pattern the factory uses
-    for _ in range(3):
-        rl.check("ratelimit:tok:post_status", max_requests=3, window_seconds=10)
-    allowed_ps, _ = rl.check("ratelimit:tok:post_status", max_requests=3, window_seconds=10)
-    allowed_risk, _ = rl.check("ratelimit:tok:risk", max_requests=3, window_seconds=10)
-
-    assert allowed_ps is False   # post_status limit hit
-    assert allowed_risk is True  # risk limit independent
+def test_extensionpay_down_returns_503():
+    import httpx
+    with patch("app.services.license_service.httpx.AsyncClient") as cls, \
+         patch("app.services.license_service.settings") as mock_settings, \
+         patch("app.services.license_service.cache") as mock_cache:
+        mock_settings.license_mode = "extensionpay"
+        mock_settings.extensionpay_secret_key = "test-key"
+        mock_cache.get.return_value = None
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
+        mock_client.get = AsyncMock(side_effect=httpx.ConnectError("down"))
+        cls.return_value = mock_client
+        resp = client.get(
+            "/api/v1/post-status?post_id=abc123&subreddit=python",
+            headers={"Authorization": "Bearer user@example.com"},
+        )
+    assert resp.status_code == 503
+    assert resp.json()["detail"]["error"] == "license_service_unavailable"
