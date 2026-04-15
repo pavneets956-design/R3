@@ -7,6 +7,7 @@ import { RiskCard } from './RiskCard';
 import { StatusCard } from './StatusCard';
 import { NotesBlock } from './NotesBlock';
 import { PanelFooter } from './PanelFooter';
+import { ProUnlockedToast } from './Toast';
 import { ErrorBoundary } from './ErrorBoundary';
 import type { PageContext } from '../../shared/types';
 
@@ -46,6 +47,7 @@ export function FloatingPanel() {
 
         <PanelFooter />
       </div>
+      <ProUnlockedToast />
     </div>
   );
 }

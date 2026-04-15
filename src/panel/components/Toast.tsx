@@ -8,6 +8,10 @@ export function ProUnlockedToast() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.onMessage) {
+      return;
+    }
+
     const handler = (msg: unknown) => {
       if (
         typeof msg === 'object' &&

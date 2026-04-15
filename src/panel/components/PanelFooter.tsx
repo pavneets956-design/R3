@@ -1,3 +1,5 @@
+import { UpgradeCTA } from './UpgradeCTA';
+
 export function PanelFooter() {
   const optionsUrl =
     typeof chrome !== 'undefined' && chrome.runtime?.getURL
@@ -9,6 +11,7 @@ export function PanelFooter() {
       <a href={optionsUrl} target="_blank" rel="noopener noreferrer" className="r3-footer__link">
         R3 Settings
       </a>
+      <UpgradeCTA />
     </div>
   );
 }
