@@ -20,6 +20,8 @@ async def validate_license(email: str) -> bool:
     if not email:
         return False
 
+    email = email.strip().lower()
+
     if settings.license_mode == "stub":
         return await validate_license_stub(email)
 
@@ -32,13 +34,15 @@ async def validate_license(email: str) -> bool:
         async with httpx.AsyncClient(timeout=5.0) as client:
             resp = await client.get(
                 f"{EXTENSIONPAY_API}/{email}",
-                headers={"Authorization": f"Basic {settings.extensionpay_secret_key}"},
+                auth=("", settings.extensionpay_secret_key),
             )
     except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError) as exc:
         raise LicenseServiceError(f"ExtensionPay unreachable: {exc}") from exc
 
-    if resp.status_code != 200:
+    if resp.status_code == 404:
         return False
+    if resp.status_code != 200:
+        raise LicenseServiceError(f"ExtensionPay returned {resp.status_code}")
 
     paid = bool(resp.json().get("paid", False))
     if paid:

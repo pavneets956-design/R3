@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from app.services.license_service import validate_license
+from app.cache import TTLCache
 
 
 @pytest.mark.asyncio
@@ -11,7 +12,8 @@ async def test_paid_email_returns_true():
     mock_response.json.return_value = {"paid": True}
 
     with patch("app.services.license_service.httpx.AsyncClient") as mock_client_cls, \
-         patch("app.services.license_service.settings") as mock_settings:
+         patch("app.services.license_service.settings") as mock_settings, \
+         patch("app.services.license_service.cache", new_callable=TTLCache):
         mock_settings.license_mode = "extensionpay"
         mock_settings.extensionpay_secret_key = "test-key"
         mock_client = AsyncMock()
@@ -32,7 +34,8 @@ async def test_unpaid_email_returns_false():
     mock_response.json.return_value = {"paid": False}
 
     with patch("app.services.license_service.httpx.AsyncClient") as mock_client_cls, \
-         patch("app.services.license_service.settings") as mock_settings:
+         patch("app.services.license_service.settings") as mock_settings, \
+         patch("app.services.license_service.cache", new_callable=TTLCache):
         mock_settings.license_mode = "extensionpay"
         mock_settings.extensionpay_secret_key = "test-key"
         mock_client = AsyncMock()
