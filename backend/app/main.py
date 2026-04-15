@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
+from app.routes import license as license_router
 
 app = FastAPI(title="R3 Backend", version="0.1.0")
 
@@ -10,6 +11,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+app.include_router(license_router.router, prefix="/api/v1")
 
 
 @app.get("/health")
