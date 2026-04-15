@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "project": "R3 Browser Extension",
+  "updated": "2026-04-14T12:00:00.000Z",
+  "counts": {
+    "inbox": 0,
+    "in_progress": 0,
+    "done": 10,
+    "blocked": 0
+  },
+  "tasks": [
+    {
+      "id": "R001",
+      "title": "Phase 1 Extension Build",
+      "agent": "jarvis-ops",
+      "priority": "high",
+      "status": "done",
+      "file": "jarvis/tasks/done/R001-phase1-build.md",
+      "deliverable": "dist/ — clean Vite build, 68/68 tests, 0 tsc errors, PR #1 merged",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R002",
+      "title": "Phase 2 Architecture Decision: Backend Data Strategy",
+      "agent": "jarvis-ops",
+      "priority": "high",
+      "status": "done",
+      "file": "jarvis/tasks/done/R002-backend-decision.md",
+      "deliverable": "Decision: Plan A (PRAW scraper). Recorded in profile.md §6 and jarvis/tasks/done/R002-backend-decision.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R003",
+      "title": "Phase 2 Monetization & Payment Research",
+      "agent": "jarvis-research",
+      "priority": "high",
+      "status": "done",
+      "file": "jarvis/tasks/done/R003-monetization-research.md",
+      "deliverable": "jarvis/briefings/2026-04-14-monetization-research.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R004",
+      "title": "Competitor Analysis",
+      "agent": "jarvis-research",
+      "priority": "med",
+      "status": "done",
+      "file": "jarvis/tasks/done/R004-competitor-analysis.md",
+      "deliverable": "jarvis/briefings/2026-04-14-competitor-analysis.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R005",
+      "title": "Chrome Web Store Submission Checklist",
+      "agent": "jarvis-legal",
+      "priority": "med",
+      "status": "done",
+      "file": "jarvis/tasks/done/R005-cws-checklist.md",
+      "deliverable": "jarvis/briefings/2026-04-14-cws-submission-checklist.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R006",
+      "title": "Landing Page Copy Draft",
+      "agent": "jarvis-growth",
+      "priority": "med",
+      "status": "done",
+      "file": "jarvis/tasks/done/R006-landing-page-copy.md",
+      "deliverable": "jarvis/drafts/landing-page-copy.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R007",
+      "title": "Privacy Policy Draft",
+      "agent": "jarvis-legal",
+      "priority": "med",
+      "status": "done",
+      "file": "jarvis/tasks/done/R007-privacy-policy.md",
+      "deliverable": "jarvis/drafts/privacy-policy.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R008",
+      "title": "Beta User Outreach List",
+      "agent": "jarvis-leads",
+      "priority": "low",
+      "status": "done",
+      "file": "jarvis/tasks/done/R008-beta-testers.md",
+      "deliverable": "jarvis/leads/beta-testers.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R009",
+      "title": "Phase 2 Backend Design Spec",
+      "agent": "jarvis-ops",
+      "priority": "high",
+      "status": "done",
+      "file": "jarvis/tasks/done/R009-phase2-backend-spec.md",
+      "deliverable": "docs/superpowers/specs/phase2-backend-design.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    },
+    {
+      "id": "R010",
+      "title": "Stripe Integration Research",
+      "agent": "jarvis-research",
+      "priority": "med",
+      "status": "done",
+      "file": "jarvis/tasks/done/R010-stripe-research.md",
+      "deliverable": "jarvis/briefings/stripe-extension-integration.md",
+      "created": "2026-04-14",
+      "updated": "2026-04-14"
+    }
+  ],
+  "recent_activity": [
+    {
+      "ts": "2026-04-14T12:00:00.000Z",
+      "event": "DRIVE SESSION COMPLETE. R002 unblocked (Plan A: PRAW). R003-R010 all done. 9 deliverables produced."
+    },
+    {
+      "ts": "2026-04-14T11:55:00.000Z",
+      "event": "R010 done → jarvis/briefings/stripe-extension-integration.md"
+    },
+    {
+      "ts": "2026-04-14T11:50:00.000Z",
+      "event": "R009 done → docs/superpowers/specs/phase2-backend-design.md"
+    },
+    {
+      "ts": "2026-04-14T11:45:00.000Z",
+      "event": "R008 done → jarvis/leads/beta-testers.md"
+    },
+    {
+      "ts": "2026-04-14T11:40:00.000Z",
+      "event": "R007 done → jarvis/drafts/privacy-policy.md"
+    },
+    {
+      "ts": "2026-04-14T11:35:00.000Z",
+      "event": "R006 done → jarvis/drafts/landing-page-copy.md"
+    },
+    {
+      "ts": "2026-04-14T11:30:00.000Z",
+      "event": "R005 done → jarvis/briefings/2026-04-14-cws-submission-checklist.md"
+    },
+    {
+      "ts": "2026-04-14T11:25:00.000Z",
+      "event": "R004 done → jarvis/briefings/2026-04-14-competitor-analysis.md"
+    },
+    {
+      "ts": "2026-04-14T11:20:00.000Z",
+      "event": "R003 done → jarvis/briefings/2026-04-14-monetization-research.md"
+    },
+    {
+      "ts": "2026-04-14T11:15:00.000Z",
+      "event": "R002 unblocked. Plan A (PRAW scraper) confirmed by owner. profile.md updated. R002 moved to done."
+    },
+    {
+      "ts": "2026-04-14T00:00:00.000Z",
+      "event": "JARVIS bootstrapped for R3 project. Phase 1 marked done. Roadmap R001-R010 created. R002 blocked on user decision."
+    }
+  ]
+}
