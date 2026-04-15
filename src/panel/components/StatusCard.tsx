@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getProToken, fetchPostStatus } from '../api/backendClient';
 import type { PostStatusResponse } from '../api/backendClient';
+import { useLicense } from '../contexts/LicenseContext';
+import { ProLock } from './ProLock';
 
 interface Props {
   postId: string | null;
@@ -23,10 +25,29 @@ const REASON_LABELS: Record<string, string> = {
   insufficient_signal: 'Insufficient data to determine status',
 };
 
+function FreeTierBody() {
+  return (
+    <div style={{ padding: '4px 0' }}>
+      <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 14, color: '#111827' }}>
+        Post Removal Detection
+      </div>
+      <ProLock label="Post visibility status" />
+      <ProLock label="Removal reason" />
+      <ProLock label="Checked at" />
+      <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+        Detects silent post removals by moderators.
+      </p>
+    </div>
+  );
+}
+
 export function StatusCard({ postId, subreddit }: Props) {
+  const { paid } = useLicense();
   const [state, setState] = useState<State>({ type: 'loading' });
 
   useEffect(() => {
+    if (!paid) return;
+
     let cancelled = false;
 
     async function load() {
@@ -64,12 +85,12 @@ export function StatusCard({ postId, subreddit }: Props) {
 
     load();
     return () => { cancelled = true; };
-  }, [postId, subreddit]);
+  }, [paid, postId, subreddit]);
 
   return (
     <div className="r3-section">
       <div className="r3-section__heading">Post Visibility</div>
-      <StatusBody state={state} />
+      {paid ? <StatusBody state={state} /> : <FreeTierBody />}
     </div>
   );
 }

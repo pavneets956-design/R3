@@ -8,8 +8,15 @@ vi.mock('../../src/panel/api/backendClient', () => ({
   fetchPostStatus: vi.fn(),
 }));
 
+vi.mock('../../src/panel/contexts/LicenseContext', () => ({
+  useLicense: vi.fn(),
+}));
+import { useLicense } from '../../src/panel/contexts/LicenseContext';
+
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default to paid=true so existing Pro-tier tests work without per-test setup
+  (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'user@example.com' });
 });
 
 describe('StatusCard — no token', () => {
@@ -87,5 +94,46 @@ describe('StatusCard — error', () => {
       render(<StatusCard postId="abc123" username="user1" subreddit="learnprogramming" />);
     });
     expect(screen.getByText(/unavailable/i)).toBeInTheDocument();
+  });
+});
+
+describe('StatusCard — free tier', () => {
+  it('shows teaser with feature description for free users', () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false });
+    const { getByText } = render(
+      <StatusCard postId="abc123" username="testuser" subreddit="python" />
+    );
+    expect(getByText(/post removal detection/i)).toBeTruthy();
+  });
+
+  it('does not call fetchPostStatus for free users', () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false });
+    const spy = vi.spyOn(backendClient, 'fetchPostStatus');
+    render(<StatusCard postId="abc123" username="testuser" subreddit="python" />);
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('StatusCard — pro tier', () => {
+  it('fetches post status for pro users', async () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({
+      paid: true,
+      email: 'user@example.com',
+    });
+    vi.spyOn(backendClient, 'getProToken').mockResolvedValue('user@example.com');
+    vi.spyOn(backendClient, 'fetchPostStatus').mockResolvedValue({
+      post_id: 'abc123',
+      subreddit: 'python',
+      status: 'removed',
+      visible_to_public: false,
+      reason_hint: 'missing_from_listing',
+      checked_at: new Date().toISOString(),
+      cached: false,
+    });
+
+    const { findByText } = render(
+      <StatusCard postId="abc123" username="testuser" subreddit="python" />
+    );
+    await findByText(/removed/i);
   });
 });
