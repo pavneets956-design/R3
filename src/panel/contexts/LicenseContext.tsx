@@ -28,7 +28,8 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
           setPaid(true);
           setEmail((result['r3_pro_email'] as string) ?? '');
         }
-      });
+      })
+      .catch((err) => console.error('[R3] LicenseContext storage read error:', err));
 
     // Listen for SW messages when payment completes mid-session
     const handler = (msg: unknown) => {
