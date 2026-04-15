@@ -6,7 +6,7 @@ app = FastAPI(title="R3 Backend", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins.split(","),
+    allow_origins=[o.strip() for o in settings.cors_origins.split(",")],
     allow_methods=["GET", "POST"],
     allow_headers=["Authorization", "Content-Type"],
 )
