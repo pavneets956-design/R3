@@ -88,20 +88,26 @@ function OptionsApp() {
 function ProTokenSection() {
   const [token, setTokenState] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     getProToken().then(t => { if (t) setTokenState(t); });
   }, []);
 
   async function handleSave() {
-    const trimmed = token.trim();
-    if (trimmed) {
-      await setProToken(trimmed);
-    } else {
-      await clearProToken();
+    setSaveError(null);
+    try {
+      const trimmed = token.trim();
+      if (trimmed) {
+        await setProToken(trimmed);
+      } else {
+        await clearProToken();
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setSaveError('Failed to save token. Try again.');
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   }
 
   return (
@@ -141,6 +147,9 @@ function ProTokenSection() {
           {saved ? 'Saved!' : 'Save'}
         </button>
       </div>
+      {saveError && (
+        <div style={{ fontSize: 12, color: '#cc3300', marginTop: 8 }}>{saveError}</div>
+      )}
     </section>
   );
 }

@@ -32,9 +32,9 @@ async function backendFetch(path: string, options: RequestInit = {}): Promise<Re
   return fetch(`${BACKEND_URL}${path}`, {
     ...options,
     headers: {
+      ...(options.headers ?? {}),
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
-      ...(options.headers ?? {}),
     },
   });
 }
