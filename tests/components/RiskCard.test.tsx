@@ -6,44 +6,59 @@ import * as backendClient from '../../src/panel/api/backendClient';
 vi.mock('../../src/panel/api/backendClient', () => ({
   getProToken: vi.fn(),
   fetchRisk: vi.fn(),
+  fetchRiskSummary: vi.fn(),
 }));
+
+vi.mock('../../src/panel/contexts/LicenseContext', () => ({
+  useLicense: vi.fn(),
+}));
+import { useLicense } from '../../src/panel/contexts/LicenseContext';
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('RiskCard — no token', () => {
-  it('shows Pro overlay when token is missing', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue(null);
-    await act(async () => {
-      render(<RiskCard subreddit="javascript" username="testuser" />);
-    });
-    expect(screen.getByText('Pro')).toBeInTheDocument();
-  });
-
-  it('shows sign-in prompt when username is null', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
+describe('RiskCard — no username', () => {
+  it('shows sign-in prompt when username is null (free)', async () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false, email: '' });
     await act(async () => {
       render(<RiskCard subreddit="javascript" username={null} />);
     });
-    expect(screen.getByText(/sign in/i)).toBeInTheDocument();
+    expect(screen.getByText(/log in/i)).toBeInTheDocument();
+  });
+
+  it('shows sign-in prompt when username is null (pro)', async () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
+    await act(async () => {
+      render(<RiskCard subreddit="javascript" username={null} />);
+    });
+    expect(screen.getByText(/log in/i)).toBeInTheDocument();
   });
 });
 
 describe('RiskCard — loading', () => {
-  it('shows loading state while fetching', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
+  it('shows loading state while fetching (free)', async () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false, email: '' });
+    vi.mocked(backendClient.fetchRiskSummary).mockReturnValue(new Promise(() => {}));
+    await act(async () => {
+      render(<RiskCard subreddit="javascript" username="testuser" />);
+    });
+    expect(screen.getByText(/checking risk/i)).toBeInTheDocument();
+  });
+
+  it('shows loading state while fetching (pro)', async () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
     vi.mocked(backendClient.fetchRisk).mockReturnValue(new Promise(() => {}));
     await act(async () => {
       render(<RiskCard subreddit="javascript" username="testuser" />);
     });
-    expect(screen.getByText(/analyzing/i)).toBeInTheDocument();
+    expect(screen.getByText(/checking risk/i)).toBeInTheDocument();
   });
 });
 
-describe('RiskCard — success', () => {
+describe('RiskCard — success (pro)', () => {
   it('shows low risk level', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
     vi.mocked(backendClient.fetchRisk).mockResolvedValue({
       subreddit: 'javascript',
       username: 'testuser',
@@ -60,7 +75,7 @@ describe('RiskCard — success', () => {
   });
 
   it('shows high risk with factors', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
     vi.mocked(backendClient.fetchRisk).mockResolvedValue({
       subreddit: 'javascript',
       username: 'newuser',
@@ -80,13 +95,68 @@ describe('RiskCard — success', () => {
   });
 });
 
-describe('RiskCard — error', () => {
+describe('RiskCard — error (pro)', () => {
   it('shows error message on service failure', async () => {
-    vi.mocked(backendClient.getProToken).mockResolvedValue('dev-token-phase2');
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: true, email: 'test@example.com' });
     vi.mocked(backendClient.fetchRisk).mockRejectedValue(new Error('RISK_ERROR:503'));
     await act(async () => {
       render(<RiskCard subreddit="javascript" username="testuser" />);
     });
     expect(screen.getByText(/unavailable/i)).toBeInTheDocument();
+  });
+});
+
+describe('RiskCard — free tier', () => {
+  it('shows risk level for free users via risk-summary', async () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false, email: '' });
+    vi.spyOn(backendClient, 'fetchRiskSummary').mockResolvedValue({
+      subreddit: 'python',
+      username: 'testuser',
+      risk_level: 'high',
+      cached: false,
+    });
+
+    const { findByText } = render(
+      <RiskCard subreddit="python" username="testuser" />
+    );
+    await findByText(/high/i);
+  });
+
+  it('shows ProLock rows for breakdown in free tier', async () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({ paid: false, email: '' });
+    vi.spyOn(backendClient, 'fetchRiskSummary').mockResolvedValue({
+      subreddit: 'python',
+      username: 'testuser',
+      risk_level: 'medium',
+      cached: false,
+    });
+
+    const { findAllByLabelText } = render(
+      <RiskCard subreddit="python" username="testuser" />
+    );
+    const locks = await findAllByLabelText(/Pro only/i);
+    expect(locks.length).toBeGreaterThan(0);
+  });
+
+  it('shows full breakdown for pro users', async () => {
+    (useLicense as ReturnType<typeof vi.fn>).mockReturnValue({
+      paid: true,
+      email: 'user@example.com',
+    });
+    vi.spyOn(backendClient, 'fetchRisk').mockResolvedValue({
+      subreddit: 'python',
+      username: 'testuser',
+      risk_level: 'high',
+      confidence: 'high',
+      factors: [{ type: 'karma', impact: 'high', message: 'Low karma ratio' }],
+      recommendation: 'Post carefully',
+      cached: false,
+    });
+
+    const { findByText } = render(
+      <RiskCard subreddit="python" username="testuser" />
+    );
+    await findByText(/Low karma ratio/i);
+    await findByText(/Post carefully/i);
   });
 });
