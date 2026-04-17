@@ -1,4 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Mock chromeStore with an in-memory Map before importing storage
+const store = new Map<string, string>();
+vi.mock('../../src/panel/storage-adapter', () => ({
+  initChromeStore: vi.fn().mockResolvedValue(undefined),
+  chromeStore: {
+    getItem: vi.fn((key: string) => store.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => { store.set(key, value); }),
+    removeItem: vi.fn((key: string) => { store.delete(key); }),
+    get length() { return store.size; },
+    key: vi.fn((index: number) => [...store.keys()][index] ?? null),
+    keysWithPrefix: vi.fn((prefix: string) => [...store.keys()].filter(k => k.startsWith(prefix))),
+  },
+}));
+
 import {
   buildRulesDataKey,
   buildRulesFetchedAtKey,
@@ -15,6 +30,7 @@ import {
   clearAllData,
   RULES_TTL_MS,
 } from '../../src/panel/storage';
+import { chromeStore } from '../../src/panel/storage-adapter';
 import type { SubredditRule, UserPrefs } from '../../src/shared/types';
 
 const mockRules: SubredditRule[] = [
@@ -24,7 +40,7 @@ const mockRules: SubredditRule[] = [
 const defaultPrefs: UserPrefs = { enabled: true, collapsedByDefault: false, guestMode: false };
 
 beforeEach(() => {
-  localStorage.clear();
+  store.clear();
   vi.restoreAllMocks();
 });
 
@@ -67,7 +83,7 @@ describe('rules cache', () => {
     setRules('javascript', mockRules);
     // Simulate time passing past TTL
     const pastTime = Date.now() - RULES_TTL_MS - 1000;
-    localStorage.setItem(buildRulesFetchedAtKey('javascript'), String(pastTime));
+    chromeStore.setItem(buildRulesFetchedAtKey('javascript'), String(pastTime));
     const result = getRules('javascript');
     expect(result).not.toBeNull();
     expect(result!.stale).toBe(true);
@@ -77,7 +93,7 @@ describe('rules cache', () => {
     for (let i = 0; i < 100; i++) {
       setRules(`sub${i}`, mockRules);
     }
-    // sub0 is the oldest — should be evicted when sub100 is added
+    // sub0 is the oldest -- should be evicted when sub100 is added
     setRules('sub100', mockRules);
     expect(getRules('sub0')).toBeNull();
     expect(getRules('sub100')).not.toBeNull();
@@ -124,7 +140,7 @@ describe('meta', () => {
 });
 
 describe('clearAllData', () => {
-  it('removes all v1: keys from localStorage', () => {
+  it('removes all v1: keys from chromeStore', () => {
     setRules('javascript', mockRules);
     setNotes('alice', 'javascript', 'note');
     clearAllData();

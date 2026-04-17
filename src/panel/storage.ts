@@ -1,10 +1,11 @@
 import type { SubredditRule, UserPrefs } from '../shared/types';
+import { chromeStore } from './storage-adapter';
 
 export const RULES_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const LRU_INDEX_KEY = 'v1:subreddit:_lru';
 const MAX_CACHED_SUBREDDITS = 100;
 
-// ─── Key builders ────────────────────────────────────────────────────────────
+// --- Key builders ---
 
 export function buildRulesDataKey(subreddit: string): string {
   return `v1:subreddit:${subreddit}:rules:data`;
@@ -22,11 +23,11 @@ export function buildPrefsKey(username: string): string {
   return `v1:user:${username}:prefs`;
 }
 
-// ─── LRU index ───────────────────────────────────────────────────────────────
+// --- LRU index ---
 
 function getLruIndex(): string[] {
   try {
-    const raw = localStorage.getItem(LRU_INDEX_KEY);
+    const raw = chromeStore.getItem(LRU_INDEX_KEY);
     return raw ? (JSON.parse(raw) as string[]) : [];
   } catch {
     return [];
@@ -34,7 +35,7 @@ function getLruIndex(): string[] {
 }
 
 function saveLruIndex(index: string[]): void {
-  localStorage.setItem(LRU_INDEX_KEY, JSON.stringify(index));
+  chromeStore.setItem(LRU_INDEX_KEY, JSON.stringify(index));
 }
 
 function touchLru(subreddit: string): void {
@@ -43,20 +44,20 @@ function touchLru(subreddit: string): void {
 
   if (index.length > MAX_CACHED_SUBREDDITS) {
     const evicted = index.shift()!;
-    localStorage.removeItem(buildRulesDataKey(evicted));
-    localStorage.removeItem(buildRulesFetchedAtKey(evicted));
+    chromeStore.removeItem(buildRulesDataKey(evicted));
+    chromeStore.removeItem(buildRulesFetchedAtKey(evicted));
   }
 
   saveLruIndex(index);
 }
 
-// ─── Rules cache ─────────────────────────────────────────────────────────────
+// --- Rules cache ---
 
 export function getRules(
   subreddit: string
 ): { rules: SubredditRule[]; fetchedAt: number; stale: boolean } | null {
-  const raw = localStorage.getItem(buildRulesDataKey(subreddit));
-  const fetchedAtRaw = localStorage.getItem(buildRulesFetchedAtKey(subreddit));
+  const raw = chromeStore.getItem(buildRulesDataKey(subreddit));
+  const fetchedAtRaw = chromeStore.getItem(buildRulesFetchedAtKey(subreddit));
 
   if (!raw || !fetchedAtRaw) return null;
 
@@ -72,27 +73,27 @@ export function getRules(
 
 export function setRules(subreddit: string, rules: SubredditRule[]): void {
   touchLru(subreddit);
-  localStorage.setItem(buildRulesDataKey(subreddit), JSON.stringify(rules));
-  localStorage.setItem(buildRulesFetchedAtKey(subreddit), String(Date.now()));
+  chromeStore.setItem(buildRulesDataKey(subreddit), JSON.stringify(rules));
+  chromeStore.setItem(buildRulesFetchedAtKey(subreddit), String(Date.now()));
 }
 
-// ─── Notes ───────────────────────────────────────────────────────────────────
+// --- Notes ---
 
 export function getNotes(username: string | null, subreddit: string): string {
-  return localStorage.getItem(buildNotesKey(username, subreddit)) ?? '';
+  return chromeStore.getItem(buildNotesKey(username, subreddit)) ?? '';
 }
 
 export function setNotes(username: string | null, subreddit: string, text: string): void {
-  localStorage.setItem(buildNotesKey(username, subreddit), text);
+  chromeStore.setItem(buildNotesKey(username, subreddit), text);
 }
 
-// ─── Prefs ───────────────────────────────────────────────────────────────────
+// --- Prefs ---
 
 const DEFAULT_PREFS: UserPrefs = { enabled: true, collapsedByDefault: false, guestMode: false };
 
 export function getPrefs(username: string): UserPrefs {
   try {
-    const raw = localStorage.getItem(buildPrefsKey(username));
+    const raw = chromeStore.getItem(buildPrefsKey(username));
     return raw ? { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<UserPrefs>) } : DEFAULT_PREFS;
   } catch {
     return DEFAULT_PREFS;
@@ -100,28 +101,31 @@ export function getPrefs(username: string): UserPrefs {
 }
 
 export function setPrefs(username: string, prefs: UserPrefs): void {
-  localStorage.setItem(buildPrefsKey(username), JSON.stringify(prefs));
+  chromeStore.setItem(buildPrefsKey(username), JSON.stringify(prefs));
 }
 
-// ─── Meta ────────────────────────────────────────────────────────────────────
+// --- Meta ---
 
 const META_INSTALLED_KEY = 'v1:meta:installed';
 
 export function isInstalled(): boolean {
-  return localStorage.getItem(META_INSTALLED_KEY) === '1';
+  return chromeStore.getItem(META_INSTALLED_KEY) === '1';
 }
 
 export function markInstalled(): void {
-  localStorage.setItem(META_INSTALLED_KEY, '1');
+  chromeStore.setItem(META_INSTALLED_KEY, '1');
 }
 
-// ─── Clear all ───────────────────────────────────────────────────────────────
+// --- Clear all ---
 
+/**
+ * Clears all cached subreddit data, notes, and preferences.
+ * Also removes license/Pro keys so the extension fully resets.
+ */
 export function clearAllData(): void {
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith('v1:')) keysToRemove.push(key);
-  }
-  keysToRemove.forEach((k) => localStorage.removeItem(k));
+  const keysToRemove = chromeStore.keysWithPrefix('v1:');
+  keysToRemove.forEach((k) => chromeStore.removeItem(k));
+
+  // Also clear license keys that live outside the v1: namespace.
+  chrome.storage.local.remove(['r3_pro_paid', 'r3_pro_email', 'r3_pro_token']);
 }

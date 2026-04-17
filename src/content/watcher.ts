@@ -29,9 +29,11 @@ export function startWatcher(onUrlChange: UrlChangeCallback): void {
   observer = new MutationObserver(handleMutation);
   observer.observe(document.body, { childList: true, subtree: true });
 
-  // Expose for testing
-  (globalThis as Record<string, unknown>).__r3_observer__ = observer;
-  (globalThis as Record<string, unknown>).__r3_trigger__ = handleMutation;
+  // Expose for testing only — stripped in production builds
+  if (import.meta.env?.DEV) {
+    (globalThis as Record<string, unknown>).__r3_observer__ = observer;
+    (globalThis as Record<string, unknown>).__r3_trigger__ = handleMutation;
+  }
 }
 
 export function stopWatcher(): void {
@@ -45,6 +47,8 @@ export function stopWatcher(): void {
   }
   lastUrl = '';  // Reset so restarts don't miss first URL change
   onUrlChangeRef = () => undefined;
-  (globalThis as Record<string, unknown>).__r3_observer__ = undefined;
-  (globalThis as Record<string, unknown>).__r3_trigger__ = undefined;
+  if (import.meta.env?.DEV) {
+    (globalThis as Record<string, unknown>).__r3_observer__ = undefined;
+    (globalThis as Record<string, unknown>).__r3_trigger__ = undefined;
+  }
 }

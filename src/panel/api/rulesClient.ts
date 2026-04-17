@@ -59,7 +59,7 @@ async function doFetch(subreddit: string, isRetry = false): Promise<RulesState> 
   lastFetchAttempt[subreddit] = Date.now();
 
   try {
-    const url = `https://www.reddit.com/r/${subreddit}/about/rules.json`;
+    const url = `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/about/rules.json`;
     const response = await fetch(url);
 
     if (response.status === 403 || response.status === 451) {

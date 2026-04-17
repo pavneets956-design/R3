@@ -1,6 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
+// Mock chromeStore with an in-memory Map
+const store = new Map<string, string>();
+vi.mock('../../src/panel/storage-adapter', () => ({
+  initChromeStore: vi.fn().mockResolvedValue(undefined),
+  chromeStore: {
+    getItem: vi.fn((key: string) => store.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => { store.set(key, value); }),
+    removeItem: vi.fn((key: string) => { store.delete(key); }),
+    get length() { return store.size; },
+    key: vi.fn((index: number) => [...store.keys()][index] ?? null),
+    keysWithPrefix: vi.fn((prefix: string) => [...store.keys()].filter(k => k.startsWith(prefix))),
+  },
+}));
+
 import { FloatingPanel } from '../../src/panel/components/FloatingPanel';
 import { bridge } from '../../src/content/bridge';
 import type { PageContext } from '../../src/shared/types';
@@ -22,7 +37,7 @@ vi.mock('../../src/panel/contexts/LicenseContext', () => ({
 }));
 
 // chrome.runtime.getURL not available in jsdom
-// chrome.storage.local needed by StatusCard's getProToken (returns null → Pro overlay)
+// chrome.storage.local needed by StatusCard's getProToken (returns null -> Pro overlay)
 vi.stubGlobal('chrome', {
   runtime: { getURL: (p: string) => `chrome-extension://fake/${p}` },
   storage: {
@@ -46,15 +61,15 @@ function makeCtx(overrides: Partial<PageContext> = {}): PageContext {
 }
 
 beforeEach(() => {
-  localStorage.clear();
-  localStorage.setItem('v1:meta:installed', '1'); // not first install
+  store.clear();
+  store.set('v1:meta:installed', '1'); // not first install
   bridge._reset();
   vi.restoreAllMocks();
 });
 
 describe('FloatingPanel', () => {
   it('shows first-install welcome when not yet installed', () => {
-    localStorage.clear(); // no v1:meta:installed
+    store.clear(); // no v1:meta:installed
     render(<FloatingPanel />);
     expect(screen.getByText(/welcome to r3/i)).toBeInTheDocument();
   });

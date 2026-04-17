@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R3 — Launch Readiness Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f0f; color: #e0e0e0; line-height: 1.6; }
+  .header { background: linear-gradient(135deg, #ff4500 0%, #ff6b35 100%); padding: 40px; text-align: center; }
+  .header h1 { font-size: 2.5rem; color: white; margin-bottom: 8px; }
+  .header p { color: rgba(255,255,255,0.9); font-size: 1.1rem; }
+  .score-bar { display: flex; justify-content: center; gap: 40px; margin-top: 24px; }
+  .score-item { text-align: center; }
+  .score-num { font-size: 3rem; font-weight: 800; color: white; }
+  .score-label { color: rgba(255,255,255,0.8); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px; }
+  .card h2 { font-size: 1.2rem; margin-bottom: 16px; color: #ff4500; display: flex; align-items: center; gap: 8px; }
+  .card.full { grid-column: 1 / -1; }
+  .check { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #222; }
+  .check:last-child { border-bottom: none; }
+  .check .icon { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+  .pass .icon { background: #1a7a1a; color: #4ade80; }
+  .fail .icon { background: #7a1a1a; color: #f87171; }
+  .warn .icon { background: #7a5a1a; color: #fbbf24; }
+  .check .text { flex: 1; }
+  .check .text strong { display: block; color: #fff; }
+  .check .text span { color: #999; font-size: 0.85rem; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th { text-align: left; padding: 8px 12px; background: #222; color: #ff4500; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+  td { padding: 8px 12px; border-bottom: 1px solid #222; font-size: 0.9rem; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  .tag.critical { background: #7a1a1a; color: #f87171; }
+  .tag.high { background: #7a3a1a; color: #fb923c; }
+  .tag.medium { background: #7a5a1a; color: #fbbf24; }
+  .tag.low { background: #1a3a1a; color: #4ade80; }
+  .tag.ready { background: #1a5a1a; color: #4ade80; }
+  .tag.blocked { background: #7a1a1a; color: #f87171; }
+  .tag.action { background: #1a3a7a; color: #60a5fa; }
+  .section-title { font-size: 1.5rem; color: white; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #ff4500; }
+  .copy-block { background: #111; border: 1px solid #333; border-radius: 8px; padding: 16px; margin: 12px 0; position: relative; white-space: pre-wrap; font-size: 0.9rem; line-height: 1.7; }
+  .copy-block .label { position: absolute; top: -10px; left: 12px; background: #ff4500; color: white; padding: 2px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; background: #333; border: none; color: #ccc; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+  .copy-btn:hover { background: #ff4500; color: white; }
+  .subreddit-table td:first-child { color: #ff4500; font-weight: 600; }
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: #333; }
+  .timeline .step { position: relative; padding: 12px 0; }
+  .timeline .step::before { content: ''; position: absolute; left: -20px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: #ff4500; border: 2px solid #1a1a1a; }
+  .timeline .step h4 { color: #fff; margin-bottom: 4px; }
+  .timeline .step p { color: #999; font-size: 0.85rem; }
+  .keyword { display: inline-block; background: #1a2a3a; color: #60a5fa; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; margin: 3px; }
+  h3 { color: #fff; margin: 16px 0 8px; font-size: 1rem; }
+  .post-template { background: #111; border-left: 3px solid #ff4500; padding: 16px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .post-template h4 { color: #ff4500; margin-bottom: 8px; }
+  .post-template .sub { color: #60a5fa; font-size: 0.85rem; margin-bottom: 8px; }
+  .post-template .body { color: #ccc; font-size: 0.9rem; white-space: pre-wrap; }
+  .competitor { padding: 12px; background: #111; border-radius: 8px; margin: 8px 0; }
+  .competitor h4 { color: #fbbf24; }
+  .competitor p { color: #999; font-size: 0.85rem; }
+  @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } .score-bar { flex-direction: column; gap: 16px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>R3 — Reddit Rules & Requirements</h1>
+  <p>Complete Launch Readiness Audit &bull; April 16, 2026</p>
+  <div class="score-bar">
+    <div class="score-item"><div class="score-num">78%</div><div class="score-label">Overall Readiness</div></div>
+    <div class="score-item"><div class="score-num">86/86</div><div class="score-label">Tests Passing</div></div>
+    <div class="score-item"><div class="score-num">0</div><div class="score-label">TypeScript Errors</div></div>
+    <div class="score-item"><div class="score-num">4</div><div class="score-label">Blockers</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 1: LAUNCH BLOCKERS                 -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 class="section-title">BLOCKERS — Fix Before You Launch</h2>
+
+<div class="card full">
+  <h2>Critical Issues (Must Fix)</h2>
+
+  <div class="check fail">
+    <div class="icon">!</div>
+    <div class="text">
+      <strong>1. Bump Version to 1.0.0</strong>
+      <span>Currently 0.1.0 — signals "beta" to users and reviewers. Change in manifest.json and package.json to 1.0.0 before submitting.</span>
+    </div>
+  </div>
+
+  <div class="check fail">
+    <div class="icon">!</div>
+    <div class="text">
+      <strong>2. Fix localStorage Security Vulnerability</strong>
+      <span>CRITICAL: All extension data (notes, cache, prefs, logs) stored in localStorage on reddit.com — accessible to ANY script on the page. Migrate to chrome.storage.local which is extension-only. This is a security flaw that could get your extension flagged in review.</span>
+    </div>
+  </div>
+
+  <div class="check fail">
+    <div class="icon">!</div>
+    <div class="text">
+      <strong>3. Create Chrome Web Store Screenshots (1280x800)</strong>
+      <span>Store requires at least 1 screenshot. You need 3-5 showing: the R3 panel on a subreddit, rules display, risk card (pro), post removal detection (pro), and the options page. Use 1280x800px PNG format.</span>
+    </div>
+  </div>
+
+  <div class="check fail">
+    <div class="icon">!</div>
+    <div class="text">
+      <strong>4. Create Promotional Tile (440x280)</strong>
+      <span>Required for Chrome Web Store listing. Must show the R3 brand, tagline, and a visual of the extension in action.</span>
+    </div>
+  </div>
+</div>
+
+<div class="card full">
+  <h2>High Priority Fixes</h2>
+
+  <div class="check warn">
+    <div class="icon">!</div>
+    <div class="text">
+      <strong>5. Fix usePageContext Missing Updates</strong>
+      <span>The hook drops postId and username changes — StatusCard won't update when navigating between posts in the same subreddit. Add postId and username to the equality check.</span>
+    </div>
+  </div>
+
+  <div class="check warn">
+    <div class="icon">!</div>
+    <div class="text">
+      <strong>6. Sanitize Subreddit Name in rulesClient.ts</strong>
+      <span>Missing encodeURIComponent() on subreddit name in the fetch URL (line 62). redditClient.ts does this correctly — rulesClient.ts doesn't. Path traversal risk.</span>
+    </div>
+  </div>
+
+  <div class="check warn">
+    <div class="icon">!</div>
+    <div class="text">
+      <strong>7. Remove Testing Hooks from Production</strong>
+      <span>watcher.ts exposes __r3_observer__ and __r3_trigger__ on globalThis. Gate behind NODE_ENV !== 'production' or remove entirely.</span>
+    </div>
+  </div>
+
+  <div class="check warn">
+    <div class="icon">!</div>
+    <div class="text">
+      <strong>8. Replace Window Mount Guard with Module Variable</strong>
+      <span>window.__R3_PANEL_MOUNTED__ can be spoofed by any page script to disable R3. Use a module-scoped boolean instead.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 2: WHAT'S READY                    -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 class="section-title">What's Ready (Green Lights)</h2>
+
+<div class="grid">
+  <div class="card">
+    <h2>Code & Build</h2>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>TypeScript compiles cleanly</strong><span>0 errors with strict mode enabled</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>86/86 tests passing</strong><span>12 test files — unit + component tests via Vitest</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Vite build succeeds</strong><span>Content: 182KB, Background: 16KB, Options: 147KB</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Manifest V3 compliant</strong><span>Modern extension standard, required for new submissions</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>No XSS vulnerabilities</strong><span>No innerHTML, eval, or dangerouslySetInnerHTML usage</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>No hardcoded secrets</strong><span>ExtPay ID is public; no API keys in code</span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Architecture & Features</h2>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Shadow DOM isolation</strong><span>Panel styles don't leak into Reddit, Reddit's don't leak in</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>SPA navigation detection</strong><span>MutationObserver with debounce handles Reddit's React SPA</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Rules fetching with smart caching</strong><span>24h TTL, stale-while-revalidate, in-flight dedup, rate limiting</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>LRU cache eviction</strong><span>100-subreddit max prevents unbounded storage growth</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Error boundaries per component</strong><span>One failing card won't crash the entire panel</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>ExtPay monetization integrated</strong><span>Pro features show locked overlay for free users</span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Store Requirements</h2>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Icons present (16, 48, 128px)</strong><span>All three required sizes exist in icons/ folder</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Privacy policy written</strong><span>docs/privacy-policy.html — covers data collection, storage, no tracking</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Minimal permissions</strong><span>Only "storage" + host_permissions for reddit.com — clean and safe</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Options page functional</strong><span>Toggle enable/disable, collapse default, guest mode, clear cache</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Build output is valid</strong><span>dist/ contains manifest.json + all bundled JS + icons</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>r3-extension.zip exists</strong><span>Packaged zip ready for upload (verify it's from latest build)</span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Backend (Phase 2)</h2>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>FastAPI + PRAW backend built</strong><span>38 tests passing, risk scoring + post status detection</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Dockerfile + Fly.io config ready</strong><span>One-command deployment when you're ready for Phase 2</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>TTL caching on API responses</strong><span>5min risk cache, 2min post status — efficient</span></div></div>
+    <div class="check warn"><div class="icon">!</div><div class="text"><strong>Reddit OAuth credentials needed</strong><span>YOU need to create a Reddit app at reddit.com/prefs/apps and add to .env</span></div></div>
+    <div class="check warn"><div class="icon">!</div><div class="text"><strong>CORS origins need configuration</strong><span>Set CORS_ORIGINS in .env for your extension's origin</span></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 3: COMPETITOR LANDSCAPE            -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 class="section-title">Competitor Landscape</h2>
+
+<div class="card full">
+  <div class="competitor">
+    <h4>RedChecker</h4>
+    <p>Closest competitor. Analyzes subreddit rules and posting patterns, gives quality scores, predicts post acceptance. R3 differentiates with: real-time post removal detection, account risk scoring, per-subreddit notes, and a cleaner UI.</p>
+  </div>
+  <div class="competitor">
+    <h4>New Reddit Enhancements & Chemo (nREC)</h4>
+    <p>General Reddit enhancement suite (filters, ad-block, video download). NOT focused on posting intelligence. R3 is niche-specific — not competing directly.</p>
+  </div>
+  <div class="competitor">
+    <h4>Reddit Enhancement Suite (RES)</h4>
+    <p>The OG Reddit enhancement tool. Broad feature set but does NOT show subreddit rules before posting or detect removed posts. R3 fills a gap RES doesn't.</p>
+  </div>
+  <div class="competitor">
+    <h4>Subreddit Blocker / Reddit Liberation</h4>
+    <p>Feed filtering tools. Completely different use case — they block content, R3 helps you create content successfully.</p>
+  </div>
+  <p style="color: #4ade80; margin-top: 16px; font-weight: 600;">YOUR EDGE: R3 is the ONLY extension focused specifically on "post successfully on Reddit" — rules + risk + removal detection. This is your positioning.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 4: CHROME WEB STORE LISTING        -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 class="section-title">Chrome Web Store Listing (Optimized Copy)</h2>
+
+<div class="card full">
+  <h3>Extension Name</h3>
+  <div class="copy-block">
+    <div class="label">Title (45 chars max)</div>
+    <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText.replace(this.innerText,'').replace('Title (45 chars max)','').trim())">Copy</button>
+R3 — Reddit Rules & Post Intelligence
+  </div>
+
+  <h3>Short Description (132 chars max)</h3>
+  <div class="copy-block">
+    <div class="label">Summary</div>
+    <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText.replace(this.innerText,'').replace('Summary','').trim())">Copy</button>
+See subreddit rules before you post. Check your account risk score. Detect if your post was silently removed. Never get blindsided.
+  </div>
+
+  <h3>Full Description</h3>
+  <div class="copy-block">
+    <div class="label">Store Description</div>
+    <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.innerText.replace(this.innerText,'').replace('Store Description','').trim())">Copy</button>
+Stop getting your Reddit posts removed.
+
+R3 shows you the rules of any subreddit BEFORE you hit submit. No more guessing, no more reading sidebar walls of text, no more silent removals.
+
+HOW IT WORKS
+R3 adds a small, clean panel to the bottom-right of Reddit that automatically shows you:
+
+- Every rule of the subreddit you're currently browsing
+- Whether a rule requires specific flair, formatting, or account age
+- Your account's risk level for that subreddit (Pro)
+- Whether your post was silently removed by mods (Pro)
+
+FEATURES
+- Instant Rules Display — Fetches and caches subreddit rules with one click
+- Per-Subreddit Notes — Save personal reminders for specific communities
+- Account Risk Score — See karma ratio, account age, and shadowban signals (Pro)
+- Post Removal Detection — Know within minutes if your post was silently removed (Pro)
+- Privacy First — All data stays in your browser. No tracking. No analytics.
+- Lightweight — Runs only on reddit.com. No background processes on other sites.
+
+WHO IS THIS FOR?
+- Redditors tired of posts getting removed without explanation
+- Content creators and marketers who post across multiple subreddits
+- New Reddit users learning the rules of different communities
+- Anyone who has been shadowbanned and wants to stay safe
+
+PRIVACY
+R3 stores all data locally in your browser. We do not collect, transmit, or sell any user data. No analytics. No cookies. No third-party tracking. Your Reddit activity stays yours.
+
+COMING SOON
+- Real-time risk scoring powered by AI
+- Post optimization suggestions
+- Cross-subreddit rule comparison
+- Firefox and Edge support
+  </div>
+
+  <h3>SEO Keywords (for store listing)</h3>
+  <div style="margin: 12px 0;">
+    <span class="keyword">reddit rules</span>
+    <span class="keyword">subreddit rules</span>
+    <span class="keyword">reddit post removed</span>
+    <span class="keyword">reddit shadowban</span>
+    <span class="keyword">reddit post checker</span>
+    <span class="keyword">reddit posting tool</span>
+    <span class="keyword">reddit moderation</span>
+    <span class="keyword">reddit assistant</span>
+    <span class="keyword">reddit helper</span>
+    <span class="keyword">post intelligence</span>
+    <span class="keyword">reddit karma</span>
+    <span class="keyword">reddit account risk</span>
+    <span class="keyword">avoid reddit ban</span>
+    <span class="keyword">reddit content creator</span>
+    <span class="keyword">reddit marketing tool</span>
+  </div>
+
+  <h3>Category</h3>
+  <p style="color: #ccc;">Productivity (primary) — fits best for a tool that helps you accomplish a task on Reddit</p>
+
+  <h3>Privacy Practices (for Store tab)</h3>
+  <table>
+    <tr><th>Data Type</th><th>Collected?</th><th>Usage</th></tr>
+    <tr><td>Website content (subreddit rules)</td><td>Yes — cached locally</td><td>Displaying rules in the panel</td></tr>
+    <tr><td>User activity (current URL)</td><td>Yes — local only</td><td>Detecting which subreddit/post you're viewing</td></tr>
+    <tr><td>User notes</td><td>Yes — local only</td><td>Per-subreddit personal notes feature</td></tr>
+    <tr><td>Authentication info</td><td>No</td><td>N/A — no login required</td></tr>
+    <tr><td>Personal communications</td><td>No</td><td>N/A</td></tr>
+    <tr><td>Financial data</td><td>No</td><td>ExtPay handles payments externally</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 5: REDDIT MARKETING PLAN           -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 class="section-title">Reddit Marketing Plan — Go Viral Strategy</h2>
+
+<div class="card full">
+  <h2>Phase 1: Pre-Launch (Days 1-3)</h2>
+  <div class="timeline">
+    <div class="step">
+      <h4>Day 1 — Seed Value Posts (No Promotion)</h4>
+      <p>Post genuinely helpful comments in r/NewToReddit, r/help, and r/modhelp about how subreddit rules work, why posts get removed, and how shadowbans happen. Build karma and credibility. Do NOT mention R3 yet.</p>
+    </div>
+    <div class="step">
+      <h4>Day 2 — Continue Value-Adding</h4>
+      <p>Answer questions in r/AskReddit, r/NoStupidQuestions about Reddit mechanics. Comment on posts about "why was my post removed" in r/help. You're establishing yourself as a Reddit expert.</p>
+    </div>
+    <div class="step">
+      <h4>Day 3 — Soft Launch Post</h4>
+      <p>Post in r/SideProject with a genuine story about building R3. This is the community that celebrates builders — be authentic about the problem you solved.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card full">
+  <h2>Phase 2: Launch Day Posts (Day 4)</h2>
+  <p style="color: #fbbf24; margin-bottom: 16px;">Post across these subreddits within a 2-3 hour window. Space them out. Use DIFFERENT titles for each — Reddit flags duplicate titles.</p>
+
+  <div class="post-template">
+    <h4>Post 1: r/SideProject (453K members)</h4>
+    <div class="sub">Best for: Genuine launch stories. Very welcoming to builders.</div>
+    <div class="body"><strong>Title:</strong> I got tired of Reddit silently removing my posts, so I built an extension that shows you subreddit rules before you hit submit
+
+<strong>Body:</strong>
+Hey everyone — I'm a developer who has been posting on Reddit for years. Like many of you, I've had the frustrating experience of spending 30 minutes writing a post only to have it silently removed because I broke a rule I didn't even know existed.
+
+The worst part? Reddit doesn't tell you. Your post just... disappears into the void.
+
+So I built R3 — a Chrome extension that:
+- Shows you every subreddit rule BEFORE you post
+- Caches rules so they load instantly
+- Lets you save per-subreddit notes (reminders for yourself)
+- Detects if your post was silently removed (Pro feature)
+- Shows your account risk score for that subreddit (Pro)
+
+It's a small floating panel that appears on Reddit. Lightweight, privacy-first (all data stays local), and it just works.
+
+I'd love feedback from this community. What features would make this more useful for you?
+
+[Chrome Web Store Link]</div>
+  </div>
+
+  <div class="post-template">
+    <h4>Post 2: r/chrome_extensions</h4>
+    <div class="sub">Best for: Direct product promotion. This subreddit EXISTS for this purpose.</div>
+    <div class="body"><strong>Title:</strong> R3 — See subreddit rules and detect removed posts. Free Chrome extension for Reddit users.
+
+<strong>Body:</strong>
+Just launched R3 on the Chrome Web Store. It's a lightweight extension that adds a floating panel to Reddit showing:
+
+- Subreddit rules (fetched and cached automatically)
+- Personal notes per subreddit
+- Account risk scoring (Pro)
+- Post removal detection (Pro)
+
+Built with React + TypeScript, runs only on reddit.com, minimal permissions (just storage), privacy-first with no data collection.
+
+Free tier gives you rules + notes. Pro unlocks risk scoring and removal detection.
+
+Feedback welcome!
+
+[Chrome Web Store Link]</div>
+  </div>
+
+  <div class="post-template">
+    <h4>Post 3: r/NewToReddit (200K+ members)</h4>
+    <div class="sub">Best for: Reaching the people who need R3 most — new Redditors confused by rules.</div>
+    <div class="body"><strong>Title:</strong> PSA: There's now a free extension that shows you subreddit rules before you post (so you don't get silently removed)
+
+<strong>Body:</strong>
+If you're new to Reddit, one of the most frustrating things is having your posts silently removed because you broke a rule you didn't know about.
+
+I built a free Chrome extension called R3 that shows you every subreddit's rules in a clean panel right on the page. No more hunting through sidebars or getting surprised by automod.
+
+It also lets you save personal notes for each subreddit (like "use [OC] tag" or "no links on Mondays").
+
+It's completely free for the core features. Just wanted to share since I know how confusing Reddit rules can be when you're starting out.
+
+[Chrome Web Store Link]</div>
+  </div>
+
+  <div class="post-template">
+    <h4>Post 4: r/webdev or r/javascript</h4>
+    <div class="sub">Best for: Technical audience. Focus on the BUILD, not the product.</div>
+    <div class="body"><strong>Title:</strong> Show r/webdev: Built a Chrome extension with React + Shadow DOM + Vite — here's what I learned about injecting UI into third-party pages
+
+<strong>Body:</strong>
+I just shipped my first Chrome extension — R3, which adds a floating panel to Reddit for viewing subreddit rules.
+
+Some technical decisions that might interest other devs:
+
+- Used Shadow DOM to completely isolate styles (Reddit's CSS is wild)
+- React 18 mounted inside the shadow root via a custom bridge
+- MutationObserver + debounce to detect Reddit's SPA navigation
+- Stale-while-revalidate caching with LRU eviction for rules data
+- In-flight request deduplication to prevent redundant fetches
+- ExtPay for Stripe-based monetization without a custom backend
+- 86 tests with Vitest + React Testing Library
+
+Happy to answer questions about the architecture. Building content scripts for modern SPAs is surprisingly tricky.
+
+[Chrome Web Store Link] | [Tech details in comments]</div>
+  </div>
+
+  <div class="post-template">
+    <h4>Post 5: r/marketing or r/socialmediamarketing</h4>
+    <div class="sub">Best for: Marketers who post on Reddit as part of their strategy.</div>
+    <div class="body"><strong>Title:</strong> Free tool that shows subreddit rules before you post — saves marketers from getting silently removed
+
+<strong>Body:</strong>
+If you use Reddit as a marketing channel, you know the pain: every subreddit has different rules, and breaking one means your post gets silently removed with no notification.
+
+I built R3 — a Chrome extension that shows you every rule of the subreddit you're currently browsing, right on the page. No more hunting through sidebars.
+
+Pro version also detects if your post was silently removed and shows your account risk score.
+
+Figured this would be useful for anyone here who posts across multiple subreddits.
+
+[Chrome Web Store Link]</div>
+  </div>
+</div>
+
+<div class="card full">
+  <h2>Phase 3: Viral Amplification (Days 5-14)</h2>
+
+  <h3>Target Subreddits (Second Wave)</h3>
+  <table class="subreddit-table">
+    <tr><th>Subreddit</th><th>Members</th><th>Angle</th><th>Post Type</th></tr>
+    <tr><td>r/InternetIsBeautiful</td><td>17M+</td><td>"Useful tool" discovery</td><td>Direct link post</td></tr>
+    <tr><td>r/productivity</td><td>3M+</td><td>Reddit efficiency tool</td><td>Self-post with context</td></tr>
+    <tr><td>r/startups</td><td>1.5M+</td><td>Share thread / launch story</td><td>Weekly share thread</td></tr>
+    <tr><td>r/Entrepreneur</td><td>2M+</td><td>Reddit marketing tool</td><td>Value-first post</td></tr>
+    <tr><td>r/opensource</td><td>200K+</td><td>Open source project</td><td>If you open-source it</td></tr>
+    <tr><td>r/coolguides</td><td>5M+</td><td>Visual guide to subreddit rules</td><td>Infographic</td></tr>
+    <tr><td>r/LifeProTips</td><td>25M+</td><td>"LPT: Check subreddit rules..."</td><td>Tip with extension mention in comments</td></tr>
+    <tr><td>r/YouShouldKnow</td><td>8M+</td><td>"YSK about silent post removal"</td><td>Awareness post, link in comments</td></tr>
+  </table>
+
+  <h3>Self-Marketing Flywheel</h3>
+  <p style="color: #ccc; margin: 12px 0;">The genius of R3 is that it markets itself through its own use case:</p>
+  <table>
+    <tr><th>Flywheel Step</th><th>How It Works</th></tr>
+    <tr><td>1. User discovers post removal is real</td><td>Frustrated users search "reddit post removed" — your SEO keywords catch them</td></tr>
+    <tr><td>2. User installs R3</td><td>Solves their immediate pain point</td></tr>
+    <tr><td>3. User successfully posts on Reddit</td><td>R3 helped them — they feel grateful</td></tr>
+    <tr><td>4. User tells others about R3</td><td>In comments: "I use R3 to check rules first" — organic word-of-mouth</td></tr>
+    <tr><td>5. More users discover R3</td><td>Cycle repeats. Every Reddit frustration = potential R3 user</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 6: CONTENT SEEDING STRATEGY        -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 class="section-title">Content Seeding Strategy (Make It Self-Marketing)</h2>
+
+<div class="card full">
+  <h2>Comment Templates for Organic Discovery</h2>
+  <p style="color: #999; margin-bottom: 16px;">When you see these posts naturally, drop a helpful comment. NOT spammy — genuinely helpful with R3 as a natural mention.</p>
+
+  <div class="post-template">
+    <h4>When someone says "my post was removed and I don't know why"</h4>
+    <div class="body">"That's probably a silent removal — mods can remove posts without notifying you. Check if you can see your post when logged out. If not, it was removed.
+
+For future posts, I'd recommend checking the subreddit rules first. There's actually an extension called R3 that shows you all the rules in a panel on the page — saved me a ton of frustration."</div>
+  </div>
+
+  <div class="post-template">
+    <h4>When someone asks "how do I check subreddit rules"</h4>
+    <div class="body">"You can find them in the sidebar (on desktop) or the 'About' tab (on mobile). But honestly, they're easy to miss.
+
+I use a Chrome extension called R3 that puts the rules right on the page in a floating panel. Way faster than hunting through sidebars, especially when you post in a lot of different subreddits."</div>
+  </div>
+
+  <div class="post-template">
+    <h4>When someone asks "am I shadowbanned?"</h4>
+    <div class="body">"Try visiting your profile in an incognito window — if you see 'page not found,' you might be shadowbanned.
+
+There's also a Chrome extension called R3 that has a risk score feature showing shadowban signals, karma ratio, and account age factors. The Pro version can even tell you if specific posts were silently removed."</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 7: LAUNCH TIMELINE                 -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 class="section-title">Launch Timeline</h2>
+
+<div class="card full">
+  <table>
+    <tr><th>Day</th><th>Task</th><th>Status</th></tr>
+    <tr><td>Today</td><td>Fix 4 critical blockers (version, localStorage, screenshots, promo tile)</td><td><span class="tag action">ACTION</span></td></tr>
+    <tr><td>Today</td><td>Fix 4 high priority code issues</td><td><span class="tag action">ACTION</span></td></tr>
+    <tr><td>Today</td><td>Rebuild dist/ and r3-extension.zip</td><td><span class="tag action">ACTION</span></td></tr>
+    <tr><td>Day 1</td><td>Submit to Chrome Web Store (review takes 1-3 days)</td><td><span class="tag blocked">BLOCKED</span> on fixes</td></tr>
+    <tr><td>Day 1-3</td><td>Pre-launch karma building on Reddit (value posts, no promotion)</td><td><span class="tag ready">READY</span></td></tr>
+    <tr><td>Day 2</td><td>Host privacy policy at a public URL</td><td><span class="tag action">ACTION</span></td></tr>
+    <tr><td>Day 3-4</td><td>Extension approved on Chrome Web Store</td><td><span class="tag blocked">WAITING</span></td></tr>
+    <tr><td>Day 4</td><td>Launch posts: r/SideProject, r/chrome_extensions, r/NewToReddit</td><td><span class="tag ready">READY</span></td></tr>
+    <tr><td>Day 5</td><td>Technical post: r/webdev or r/javascript</td><td><span class="tag ready">READY</span></td></tr>
+    <tr><td>Day 6-7</td><td>Marketing angle: r/marketing, r/socialmediamarketing</td><td><span class="tag ready">READY</span></td></tr>
+    <tr><td>Week 2</td><td>Second wave: r/InternetIsBeautiful, r/productivity, r/LifeProTips</td><td><span class="tag ready">READY</span></td></tr>
+    <tr><td>Week 2+</td><td>Ongoing: Organic comment seeding when you see relevant posts</td><td><span class="tag ready">READY</span></td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 8: FINAL CHECKLIST                 -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 class="section-title">Final Submission Checklist</h2>
+
+<div class="grid">
+  <div class="card">
+    <h2>Chrome Web Store Submission</h2>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Developer account ($5 one-time fee)</strong><span>Verify you've paid at chrome.google.com/webstore/devconsole</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>manifest.json valid (MV3)</strong><span>Verified in build output</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Icons: 16px, 48px, 128px</strong><span>All present in icons/ folder</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Screenshots (1280x800 or 640x400)</strong><span>MISSING — need 3-5 screenshots</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Promo tile (440x280)</strong><span>MISSING — required for store listing</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Privacy policy document</strong><span>Exists at docs/privacy-policy.html</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Privacy policy hosted URL</strong><span>MISSING — host on GitHub Pages or your domain</span></div></div>
+    <div class="check pass"><div class="icon">&#10003;</div><div class="text"><strong>Store description written</strong><span>See optimized copy above</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Privacy practices tab completed</strong><span>MISSING — fill out in developer dashboard</span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Code Fixes Before Submit</h2>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Bump version to 1.0.0</strong><span>manifest.json + package.json</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Migrate localStorage to chrome.storage.local</strong><span>All storage.ts operations</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Add encodeURIComponent in rulesClient.ts</strong><span>Line 62 — subreddit URL param</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Remove globalThis test hooks in production</strong><span>watcher.ts lines 33-34</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Fix window mount guard</strong><span>Use module-scoped variable instead</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Fix usePageContext equality check</strong><span>Include postId + username</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Rebuild dist/ after all fixes</strong><span>npm run build</span></div></div>
+    <div class="check fail"><div class="icon">!</div><div class="text"><strong>Repackage r3-extension.zip</strong><span>Zip the fresh dist/ folder</span></div></div>
+  </div>
+</div>
+
+</div>
+
+<div style="background: #111; padding: 40px; text-align: center; border-top: 2px solid #ff4500;">
+  <p style="color: #666; font-size: 0.85rem;">R3 Launch Readiness Audit &bull; Generated April 16, 2026 &bull; Fix the 4 blockers and you're ready to ship.</p>
+</div>
+
+<script>
+// Copy functionality for code blocks
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+});
+</script>
+
+</body>
+</html>

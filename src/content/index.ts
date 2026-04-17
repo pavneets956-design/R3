@@ -1,17 +1,15 @@
 import { startWatcher } from './watcher';
 import { detectPageContext } from './detector';
 import { bridge } from './bridge';
+import { initChromeStore } from '../panel/storage-adapter';
 import { logEvent } from '../shared/logger';
 
-declare global {
-  interface Window {
-    __R3_PANEL_MOUNTED__: boolean | undefined;
-  }
-}
+// Module-scoped mount guard — cannot be spoofed by page scripts
+let panelMounted = false;
 
 async function mountPanel(): Promise<void> {
-  if (window.__R3_PANEL_MOUNTED__) return;
-  window.__R3_PANEL_MOUNTED__ = true;
+  if (panelMounted) return;
+  panelMounted = true;
 
   // Dynamically import the React panel to keep initial parse cost low
   const { mountR3Panel } = await import('../panel/main');
@@ -20,7 +18,10 @@ async function mountPanel(): Promise<void> {
   logEvent({ type: 'PANEL_MOUNTED' });
 }
 
-function init(): void {
+async function init(): Promise<void> {
+  // Initialize chrome.storage.local -> in-memory cache BEFORE any storage reads
+  await initChromeStore();
+
   // Emit initial context on load
   const initialCtx = detectPageContext();
   bridge.emit(initialCtx);

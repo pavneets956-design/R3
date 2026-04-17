@@ -7,11 +7,11 @@ class Settings(BaseSettings):
     reddit_client_id: str
     reddit_client_secret: str
     reddit_user_agent: str = "r3-backend/0.1"
-    license_mode: str = "stub"
+    license_mode: str = "extensionpay"
     cache_ttl_risk: int = 300
     cache_ttl_post_status: int = 120
     cache_ttl_subreddit_meta: int = 3600
-    cors_origins: str = "*"  # Override in production with chrome-extension:// origin
+    cors_origins: str = ""  # Set to chrome-extension://<ID> in production .env
 
 
 settings = Settings()

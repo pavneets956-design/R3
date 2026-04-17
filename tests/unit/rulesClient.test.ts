@@ -1,4 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// Mock chromeStore so storage.ts functions work in tests
+const store = new Map<string, string>();
+vi.mock('../../src/panel/storage-adapter', () => ({
+  initChromeStore: vi.fn().mockResolvedValue(undefined),
+  chromeStore: {
+    getItem: vi.fn((key: string) => store.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => { store.set(key, value); }),
+    removeItem: vi.fn((key: string) => { store.delete(key); }),
+    get length() { return store.size; },
+    key: vi.fn((index: number) => [...store.keys()][index] ?? null),
+    keysWithPrefix: vi.fn((prefix: string) => [...store.keys()].filter(k => k.startsWith(prefix))),
+  },
+}));
+
 import { fetchRules } from '../../src/panel/api/rulesClient';
 import * as storage from '../../src/panel/storage';
 import type { SubredditRule } from '../../src/shared/types';
@@ -14,7 +29,7 @@ const mockRedditResponse = {
 };
 
 beforeEach(() => {
-  localStorage.clear();
+  store.clear();
   vi.restoreAllMocks();
   vi.useFakeTimers();
 });

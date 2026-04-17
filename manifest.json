@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "R3 — Reddit Rules & Requirements",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "See subreddit rules and post intelligence before you submit.",
   "icons": {
     "16": "icons/icon16.png",
@@ -23,7 +23,7 @@
     "page": "src/options/options.html",
     "open_in_tab": true
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "alarms"],
   "host_permissions": [
     "https://www.reddit.com/*"
   ],

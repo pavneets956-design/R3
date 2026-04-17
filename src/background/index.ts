@@ -30,6 +30,50 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+// --- Periodic license re-validation ---
+// Re-check payment status every 6 hours so refunds/chargebacks revoke Pro.
+const LICENSE_CHECK_ALARM = 'r3-license-revalidate';
+
+chrome.alarms.create(LICENSE_CHECK_ALARM, { periodInMinutes: 360 });
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name !== LICENSE_CHECK_ALARM) return;
+
+  try {
+    const user = await extpay.getUser();
+    const wasPaid = (await chrome.storage.local.get('r3_pro_paid'))['r3_pro_paid'];
+
+    if (user.paid && !wasPaid) {
+      // User paid externally (e.g. different device) — grant Pro.
+      chrome.storage.local.set({ r3_pro_paid: true, r3_pro_email: user.email ?? '' });
+      mirrorApiKey();
+      chrome.runtime.sendMessage({ type: 'LICENSE_UPDATED', paid: true, email: user.email ?? '' }).catch(() => {});
+    } else if (!user.paid && wasPaid) {
+      // Payment revoked (refund/chargeback) — revoke Pro.
+      chrome.storage.local.set({ r3_pro_paid: false, r3_pro_email: '' });
+      chrome.storage.local.remove('r3_pro_token');
+      chrome.runtime.sendMessage({ type: 'LICENSE_UPDATED', paid: false, email: '' }).catch(() => {});
+    }
+  } catch (err) {
+    // ExtPay API unreachable — keep current state, retry next cycle.
+    console.warn('[R3] License re-validation failed:', err);
+  }
+});
+
+// Also re-validate on every service worker cold-start (covers browser restarts).
+extpay.getUser().then((user) => {
+  chrome.storage.local.get('r3_pro_paid', (result) => {
+    const wasPaid = !!result['r3_pro_paid'];
+    if (user.paid && !wasPaid) {
+      chrome.storage.local.set({ r3_pro_paid: true, r3_pro_email: user.email ?? '' });
+      mirrorApiKey();
+    } else if (!user.paid && wasPaid) {
+      chrome.storage.local.set({ r3_pro_paid: false, r3_pro_email: '' });
+      chrome.storage.local.remove('r3_pro_token');
+    }
+  });
+}).catch(() => { /* offline — keep cached state */ });
+
 extpay.onPaid.addListener((user) => {
   // Store paid state and display email in local storage.
   chrome.storage.local.set({

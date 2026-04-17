@@ -2,10 +2,25 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
+
+// Mock chromeStore with an in-memory Map
+const store = new Map<string, string>();
+vi.mock('../../src/panel/storage-adapter', () => ({
+  initChromeStore: vi.fn().mockResolvedValue(undefined),
+  chromeStore: {
+    getItem: vi.fn((key: string) => store.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => { store.set(key, value); }),
+    removeItem: vi.fn((key: string) => { store.delete(key); }),
+    get length() { return store.size; },
+    key: vi.fn((index: number) => [...store.keys()][index] ?? null),
+    keysWithPrefix: vi.fn((prefix: string) => [...store.keys()].filter(k => k.startsWith(prefix))),
+  },
+}));
+
 import { NotesBlock } from '../../src/panel/components/NotesBlock';
 
 beforeEach(() => {
-  localStorage.clear();
+  store.clear();
 });
 
 afterEach(() => {
@@ -14,7 +29,7 @@ afterEach(() => {
 
 describe('NotesBlock', () => {
   it('loads existing notes on mount', () => {
-    localStorage.setItem('v1:user:alice:subreddit:javascript:notes', 'my saved note');
+    store.set('v1:user:alice:subreddit:javascript:notes', 'my saved note');
     render(<NotesBlock username="alice" subreddit="javascript" />);
     expect(screen.getByRole('textbox')).toHaveValue('my saved note');
   });
@@ -30,10 +45,10 @@ describe('NotesBlock', () => {
     const textarea = screen.getByRole('textbox');
 
     act(() => { fireEvent.change(textarea, { target: { value: 'hello' } }); });
-    expect(localStorage.getItem('v1:user:alice:subreddit:javascript:notes')).toBeNull();
+    expect(store.get('v1:user:alice:subreddit:javascript:notes')).toBeUndefined();
 
     act(() => { vi.advanceTimersByTime(350); });
-    expect(localStorage.getItem('v1:user:alice:subreddit:javascript:notes')).toBe('hello');
+    expect(store.get('v1:user:alice:subreddit:javascript:notes')).toBe('hello');
   });
 
   it('enforces 4096 character cap', () => {
@@ -54,6 +69,6 @@ describe('NotesBlock', () => {
 
     act(() => { fireEvent.change(textarea, { target: { value: 'guest note' } }); });
     act(() => { vi.advanceTimersByTime(350); });
-    expect(localStorage.getItem('v1:user:guest:subreddit:javascript:notes')).toBe('guest note');
+    expect(store.get('v1:user:guest:subreddit:javascript:notes')).toBe('guest note');
   });
 });

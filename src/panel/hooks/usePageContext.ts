@@ -4,9 +4,8 @@ import type { PageContext } from '../../shared/types';
 
 /**
  * Subscribes to bridge updates.
- * Only triggers a re-render when subreddit or pageType changes.
- * Other fields (url, detectedAt, postComposerOpen, postId) do not cause re-renders
- * unless a component explicitly subscribes separately.
+ * Triggers a re-render when subreddit, pageType, postId, or username changes.
+ * Other fields (url, detectedAt, postComposerOpen) do not cause re-renders.
  */
 export function usePageContext(): PageContext | null {
   const [ctx, setCtx] = useState<PageContext | null>(null);
@@ -17,9 +16,11 @@ export function usePageContext(): PageContext | null {
         if (
           prev !== null &&
           prev.subreddit === next.subreddit &&
-          prev.pageType === next.pageType
+          prev.pageType === next.pageType &&
+          prev.postId === next.postId &&
+          prev.username === next.username
         ) {
-          return prev; // Same reference → no re-render
+          return prev; // Same reference -> no re-render
         }
         return next;
       });

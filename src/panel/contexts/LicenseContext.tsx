@@ -32,7 +32,7 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
       .catch((err) => console.error('[R3] LicenseContext storage read error:', err));
 
     // Listen for SW messages when payment completes mid-session
-    const handler = (msg: unknown) => {
+    const msgHandler = (msg: unknown) => {
       if (
         typeof msg === 'object' &&
         msg !== null &&
@@ -43,8 +43,21 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         setEmail(newEmail ?? '');
       }
     };
-    chrome.runtime.onMessage.addListener(handler);
-    return () => chrome.runtime.onMessage.removeListener(handler);
+    chrome.runtime.onMessage.addListener(msgHandler);
+
+    // Also watch storage directly — catches revocations from the alarm-based
+    // re-validation and any other writes to license keys.
+    const storageHandler = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
+      if (area !== 'local') return;
+      if (changes['r3_pro_paid']) setPaid(!!changes['r3_pro_paid'].newValue);
+      if (changes['r3_pro_email']) setEmail((changes['r3_pro_email'].newValue as string) ?? '');
+    };
+    chrome.storage.onChanged.addListener(storageHandler);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(msgHandler);
+      chrome.storage.onChanged.removeListener(storageHandler);
+    };
   }, []);
 
   return (

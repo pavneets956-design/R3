@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { initChromeStore } from '../panel/storage-adapter';
 import { getPrefs, setPrefs, clearAllData } from '../panel/storage';
 import { clearLogs } from '../shared/logger';
-import { getProToken, setProToken, clearProToken } from '../panel/api/backendClient';
 import type { UserPrefs } from '../shared/types';
 
 const GUEST_USERNAME = 'guest';
@@ -59,7 +59,7 @@ function OptionsApp() {
         />
       </section>
 
-      <ProTokenSection />
+      <LicenseStatusSection />
 
       <section style={{ background: '#fff', borderRadius: 8, border: '1px solid #edeff1', padding: 24 }}>
         <div style={{ marginBottom: 8, fontWeight: 600 }}>Clear cached data</div>
@@ -85,70 +85,57 @@ function OptionsApp() {
   );
 }
 
-function ProTokenSection() {
-  const [token, setTokenState] = useState('');
-  const [saved, setSaved] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+function LicenseStatusSection() {
+  const [paid, setPaid] = useState(false);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getProToken().then(t => { if (t) setTokenState(t); });
+    chrome.storage.local.get(['r3_pro_paid', 'r3_pro_email'], (result) => {
+      setPaid(!!result['r3_pro_paid']);
+      setEmail((result['r3_pro_email'] as string) ?? '');
+      setLoading(false);
+    });
+
+    // Live-update if payment completes while options page is open
+    const handler = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
+      if (area !== 'local') return;
+      if (changes['r3_pro_paid']) setPaid(!!changes['r3_pro_paid'].newValue);
+      if (changes['r3_pro_email']) setEmail((changes['r3_pro_email'].newValue as string) ?? '');
+    };
+    chrome.storage.onChanged.addListener(handler);
+    return () => chrome.storage.onChanged.removeListener(handler);
   }, []);
 
-  async function handleSave() {
-    setSaveError(null);
-    try {
-      const trimmed = token.trim();
-      if (trimmed) {
-        await setProToken(trimmed);
-      } else {
-        await clearProToken();
-      }
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch {
-      setSaveError('Failed to save token. Try again.');
-    }
-  }
+  if (loading) return null;
 
   return (
     <section style={{ background: '#fff', borderRadius: 8, border: '1px solid #edeff1', padding: 24, marginBottom: 24 }}>
-      <div style={{ marginBottom: 8, fontWeight: 600 }}>Pro license token</div>
-      <div style={{ fontSize: 13, color: '#7c7c7c', marginBottom: 12 }}>
-        Enter your Pro license token to unlock risk scoring and post visibility checks.
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input
-          type="text"
-          value={token}
-          onChange={e => setTokenState(e.target.value)}
-          placeholder="dev-token-phase2"
-          style={{
-            flex: 1,
-            padding: '8px 12px',
-            border: '1px solid #edeff1',
-            borderRadius: 4,
-            fontSize: 13,
-            fontFamily: 'monospace',
-          }}
-        />
-        <button
-          onClick={handleSave}
-          style={{
-            padding: '8px 16px',
-            background: saved ? '#4caf50' : '#ff4500',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            cursor: 'pointer',
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
-        >
-          {saved ? 'Saved!' : 'Save'}
-        </button>
-      </div>
-      {saveError && (
-        <div style={{ fontSize: 12, color: '#cc3300', marginTop: 8 }}>{saveError}</div>
+      <div style={{ marginBottom: 8, fontWeight: 600 }}>License status</div>
+      {paid ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 14, color: '#1a8917', fontWeight: 600 }}>Pro</span>
+            <span style={{
+              display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+              background: '#1a8917',
+            }} />
+          </div>
+          {email && (
+            <div style={{ fontSize: 13, color: '#7c7c7c' }}>
+              Licensed to {email}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: 14, color: '#7c7c7c', marginBottom: 12 }}>
+            Free — upgrade to unlock risk scoring and post visibility checks.
+          </div>
+          <div style={{ fontSize: 12, color: '#999' }}>
+            Click the upgrade button inside the R3 panel on any Reddit page to purchase Pro.
+          </div>
+        </>
       )}
     </section>
   );
@@ -205,5 +192,8 @@ function ToggleSetting({
   );
 }
 
-const root = createRoot(document.getElementById('root')!);
-root.render(<OptionsApp />);
+// Initialize chrome.storage.local cache before rendering
+initChromeStore().then(() => {
+  const root = createRoot(document.getElementById('root')!);
+  root.render(<OptionsApp />);
+});
